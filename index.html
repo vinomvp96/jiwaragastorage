@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Inventory & Store Requisition System (SR1 - SR31)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --background: #f8fafc;
+      --foreground: #0f172a;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --content: #f1f5f9;
+      --border: #cbd5e1;
+      --primary: #0f172a;
+      --primary-foreground: #ffffff;
+      --muted-foreground: #64748b;
+      --placeholder: #94a3b8;
+      --link: #2563eb;
+      --success: #16a34a;
+      --warning: #d97706;
+      --error: #dc2626;
+      color-scheme: light;
+    }
+
+    html.dark {
+      --background: #09090b;
+      --foreground: #fafafa;
+      --card: #141417;
+      --card-border: #27272a;
+      --content: #1f1f23;
+      --border: #3f3f46;
+      --primary: #fafafa;
+      --primary-foreground: #09090b;
+      --muted-foreground: #a1a1aa;
+      --placeholder: #71717a;
+      --link: #60a5fa;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      overscroll-behavior-y: none;
+    }
+
+    .highlight { background: #fef08a; color: #000; border-radius: 2px; padding: 0 2px; font-weight: 600; }
+    html.dark .highlight { background: #ca8a04; color: #fff; }
+    input, select, textarea { color: var(--foreground); }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+
+    .fade-in { animation: fadeIn 0.15s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    .animate-shake { animation: shake 0.35s ease-in-out; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin-fast { animation: spin 0.7s linear infinite; }
+
+    /* Modal Responsif: Slide Up di Mobile, Centered Dialog di Desktop */
+    @media (max-width: 639px) {
+      .responsive-modal-box {
+        animation: slideUp 0.22s ease-out;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        max-height: 92vh !important;
+        margin-top: auto !important;
+        margin-bottom: 0 !important;
+      }
+    }
+    @media (min-width: 640px) {
+      .responsive-modal-box {
+        animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        max-height: 85vh !important;
+        margin: auto !important;
+      }
+    }
+
+    .filter-chip { white-space: nowrap; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .toast { animation: fadeIn 0.25s ease-out; }
+
+    /* Safe Area Padding untuk HP dengan Notch / Home Indicator Bar */
+    .safe-top { padding-top: max(env(safe-area-inset-top, 0px), 0px); }
+    .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px); }
+
+    /* Tabel Desktop Custom */
+    .table-dense th { padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .table-dense td { padding: 9px 10px; font-size: 12px; }
+    .table-dense tr:hover td { background-color: color-mix(in srgb, var(--content) 60%, transparent); }
+
+    /* Dropdown Filter Validasi Data */
+    .validation-select {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.4rem center;
+      background-repeat: no-repeat;
+      background-size: 1.1em 1.1em;
+      padding-right: 1.6rem;
+    }
+  </style>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('sr_inventory_theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-0 m-0 flex flex-col h-screen overflow-hidden safe-top">
+
+  <!-- ═══ HEADER (DESKTOP & MOBILE RESPONSIVE) ═══ -->
+  <header class="sticky top-0 z-30 bg-[var(--background)] border-b border-[var(--border)] shadow-xs flex-shrink-0">
+    <!-- Top Row -->
+    <div class="px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 max-w-7xl mx-auto w-full">
+      
+      <!-- Brand & Sheet Status -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[var(--primary)] flex items-center justify-center text-[var(--primary-foreground)] font-black text-xs sm:text-sm shadow-sm flex-shrink-0">
+          SR
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-xs sm:text-base font-extrabold tracking-tight leading-none truncate">INVENTORY</h1>
+            <span id="headerSrBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--link)] text-white shadow-xs flex-shrink-0">INVENTORY</span>
+          </div>
+          <p id="syncStatusText" class="text-[10px] sm:text-[11px] text-[var(--muted-foreground)] leading-tight mt-0.5 truncate">Menghubungkan spreadsheet...</p>
+        </div>
+      </div>
+
+      <!-- Desktop Quick Tabs Navigation (md+) -->
+      <div class="hidden md:flex items-center gap-1 bg-[var(--card)] p-1 rounded-xl border border-[var(--border)] shadow-xs">
+        <button onclick="switchSheet('INVENTORY')" id="dtab-INVENTORY" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer bg-[var(--primary)] text-[var(--primary-foreground)]">
+          📦 INVENTORY
+        </button>
+        <button onclick="switchSheet('SUMMARY SR')" id="dtab-SUMMARY" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-[var(--content)] text-[var(--muted-foreground)]">
+          📊 SUMMARY SR
+        </button>
+        <button onclick="switchSheet('FORM BARANG MASUK')" id="dtab-FORM" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-[var(--content)] text-[var(--muted-foreground)]">
+          📥 FORM MASUK
+        </button>
+        
+        <!-- Desktop Quick SR Dropdown -->
+        <div class="relative inline-flex items-center">
+          <select id="desktopSrDropdown" onchange="if(this.value) switchSheet(this.value)" class="pl-2.5 pr-7 py-1.5 text-xs font-bold rounded-lg bg-[var(--content)] border-0 text-[var(--foreground)] appearance-none cursor-pointer">
+            <option value="">📋 Pilih SR (1-31)...</option>
+          </select>
+          <svg class="absolute right-2 w-3.5 h-3.5 text-[var(--muted-foreground)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+
+        <button onclick="jumpToTodaySr()" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--content)] text-[var(--foreground)] hover:border-[var(--primary)] cursor-pointer active:scale-95" title="Buka SR Hari Ini">
+          📅 Hari Ini
+        </button>
+      </div>
+
+      <!-- Action Buttons (Right) -->
+      <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+        <!-- Desktop Primary Quick Buttons -->
+        <button onclick="openModal('form-masuk')" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-green-600 text-white hover:bg-green-700 active:scale-95 transition-all shadow-xs cursor-pointer" title="Input Barang Masuk (Ctrl+M)">
+          <span>📥 + Masuk</span>
+        </button>
+        <button onclick="openInputModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer" title="Input Pengeluaran SR (Ctrl+S)">
+          <span>📤 + Input SR</span>
+        </button>
+
+        <!-- Toggle View Mode (Tabel / Kartu) -->
+        <button onclick="toggleViewMode()" id="viewModeBtn" class="px-2.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] text-xs font-bold flex items-center gap-1 text-[var(--foreground)] cursor-pointer active:scale-95 transition-all" title="Ganti Tampilan (Ctrl+T)">
+          <span id="viewModeIcon">📋</span>
+          <span id="viewModeText" class="hidden md:inline">Tabel</span>
+        </button>
+
+        <!-- Toggle Filter Panel Button (Mobile & Desktop) -->
+        <button onclick="toggleFilterPanel()" id="filterToggleBtn" class="px-2.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] text-xs font-bold flex items-center gap-1 text-[var(--foreground)] cursor-pointer active:scale-95 transition-all" title="Buka/Tutup Filter Validasi Data">
+          <span>🎯</span>
+          <span class="hidden sm:inline">Filter</span>
+          <span id="filterActiveBadgeDot" class="hidden w-2 h-2 rounded-full bg-[var(--link)]"></span>
+        </button>
+
+        <!-- Status Admin / Stock Keeper -->
+        <button onclick="toggleAdminLockBtn()" id="adminModeBtn" class="px-2 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 border border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)] cursor-pointer active:scale-95 transition-all" title="Status Akses Hapus">
+          <span id="adminLockIcon">🔒</span>
+          <span id="adminLockText" class="hidden sm:inline">Keeper</span>
+        </button>
+
+        <!-- Sync Button -->
+        <button onclick="quickSyncSheets()" id="quickSyncBtn" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] cursor-pointer text-[var(--muted-foreground)] active:scale-95 transition-all" title="Sinkronkan Google Sheets (Ctrl+Shift+S)">
+          <svg id="syncIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+
+        <!-- Settings Button -->
+        <button onclick="openModal('settings')" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] cursor-pointer text-[var(--muted-foreground)] active:scale-95 transition-all" title="Pengaturan & Formula">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="themeToggle" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] cursor-pointer text-[var(--muted-foreground)] active:scale-95 transition-all" title="Ganti Tema">
+          <svg id="iconSun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg id="iconMoon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Sheet Selector Bar (md:hidden) -->
+    <div class="px-3 pb-2 flex md:hidden items-center gap-1.5 overflow-x-auto scrollbar-hide">
+      <button onclick="navigateSr(-1)" class="w-8 h-8 rounded-xl border border-[var(--border)] bg-[var(--card)] flex items-center justify-center flex-shrink-0 cursor-pointer active:scale-95" title="Sheet Sebelumnya">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+
+      <div class="relative flex-1 min-w-[175px]">
+        <select id="sheetSelector" onchange="onSheetChange(this.value)" class="w-full pl-2.5 pr-7 py-1.5 text-xs font-bold rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] appearance-none cursor-pointer">
+          <optgroup label="📦 Ringkasan Master">
+            <option value="INVENTORY" selected>📦 INVENTORY (Check Stock)</option>
+            <option value="SUMMARY SR">📊 SUMMARY SR (Semua OUT)</option>
+            <option value="FORM BARANG MASUK">📥 FORM BARANG MASUK</option>
+          </optgroup>
+          <optgroup label="📋 Store Requisition Harian (SR1 - SR31)" id="srOptGroup">
+            <!-- Diisi via JS -->
+          </optgroup>
+        </select>
+        <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+
+      <button onclick="navigateSr(1)" class="w-8 h-8 rounded-xl border border-[var(--border)] bg-[var(--card)] flex items-center justify-center flex-shrink-0 cursor-pointer active:scale-95" title="Sheet Berikutnya">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+
+      <button onclick="jumpToTodaySr()" class="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-[var(--border)] bg-[var(--content)] flex-shrink-0 cursor-pointer active:scale-95">
+        📅 Hari Ini
+      </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="px-3 sm:px-4 pb-2 sm:pb-2.5 max-w-7xl mx-auto w-full">
+      <div class="relative flex items-center">
+        <svg class="absolute left-3.5 w-4 h-4 text-[var(--muted-foreground)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input id="searchInput" type="text" placeholder="Ketik pencarian nama, kode, atau divisi... (Ctrl+K)"
+          class="w-full pl-10 pr-9 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border)] bg-[var(--content)] text-[var(--foreground)] placeholder:text-[var(--placeholder)]"
+          oninput="filterData()" />
+        <button id="clearBtn" onclick="clearSearch()" class="absolute right-2.5 w-6 h-6 rounded-lg bg-[var(--border)] text-[var(--muted-foreground)] flex items-center justify-center text-xs hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)] cursor-pointer hidden" title="Hapus teks pencarian">&times;</button>
+      </div>
+    </div>
+
+    <!-- ═══ DATA VALIDATION COLUMN FILTERS PANEL (FILTER SEMUA KOLOM) ═══ -->
+    <div id="filterPanelWrapper" class="px-3 sm:px-4 pb-2.5 max-w-7xl mx-auto w-full">
+      <div class="p-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-[var(--foreground)] flex items-center gap-1.5">
+              <span>🎯 Validasi Data Filter Kolom:</span>
+            </span>
+            <span id="activeFilterBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary)] text-[var(--primary-foreground)]">0 aktif</span>
+          </div>
+          <button onclick="resetAllColumnFilters()" id="resetFilterBtn" class="text-[11px] font-semibold text-[var(--link)] hover:underline cursor-pointer hidden">
+            Reset Semua Filter
+          </button>
+        </div>
+
+        <!-- Dynamic Data Validation Filter Dropdowns Container -->
+        <div id="dynamicColumnFilters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <!-- Diisi otomatis berdasarkan kolom sheet aktif -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats & KPI Bar -->
+    <div class="px-3 sm:px-4 py-1.5 sm:py-2 border-t border-[var(--card-border)] bg-[var(--card)] text-xs">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide whitespace-nowrap">
+          <span class="text-[var(--muted-foreground)]"><strong id="resultCount" class="text-[var(--foreground)] text-xs sm:text-sm">0</strong> baris</span>
+          <span class="text-[var(--border)]">•</span>
+          <span class="text-[var(--muted-foreground)]"><span id="totalQtyLabel">Total Stok</span>: <strong id="totalQtyVal" class="text-[var(--foreground)] text-xs sm:text-sm font-black">0</strong></span>
+          <span class="text-[var(--border)]">•</span>
+          <span id="sheetTypeLabel" class="text-[10px] uppercase font-black text-[var(--link)] tracking-wider">CHECK STOCK TERSEDIA</span>
+        </div>
+        <div class="hidden sm:flex items-center gap-2 flex-shrink-0">
+          <span class="text-[10px] font-mono text-[var(--muted-foreground)] bg-[var(--content)] px-2 py-0.5 rounded-md">
+            Pemisah Rumus: <code class="text-[var(--link)] font-bold">; (Titik Koma)</code>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT AREA (TABLE OR CARDS) ═══ -->
+  <main class="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 max-w-7xl mx-auto w-full pb-28 sm:pb-24 md:pb-6">
+    <div id="productList"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden flex-col items-center justify-center p-8 sm:p-12 text-center my-6">
+      <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--content)] flex items-center justify-center mb-3">
+        <svg class="w-7 h-7 sm:w-8 sm:h-8 text-[var(--muted-foreground)] opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+      </div>
+      <p class="text-sm sm:text-base font-bold text-[var(--foreground)]">Tidak ada data untuk ditampilkan</p>
+      <p id="emptyStateDesc" class="text-xs text-[var(--muted-foreground)] mt-1 max-w-md">Data sheet ini masih kosong atau kombinasi filter Anda tidak menemukan baris yang sesuai.</p>
+      <div class="mt-4 flex gap-2 justify-center">
+        <button onclick="resetAllColumnFilters()" class="px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">
+          Reset Filter
+        </button>
+        <button onclick="triggerQuickAction()" class="px-4 py-2 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer shadow-xs">
+          + Tambah Data
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ MOBILE BOTTOM NAVIGATION BAR (md:hidden) ═══ -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-[var(--background)] border-t border-[var(--border)] safe-bottom md:hidden shadow-lg">
+    <div class="flex items-center justify-around px-2 py-1 max-w-md mx-auto">
+      <button onclick="switchSheet('INVENTORY')" class="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl cursor-pointer hover:bg-[var(--card)] transition-colors active:scale-95">
+        <span class="text-lg">📦</span>
+        <span class="text-[10px] text-[var(--muted-foreground)] font-semibold">Stok</span>
+      </button>
+
+      <button onclick="switchSheet('SUMMARY SR')" class="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl cursor-pointer hover:bg-[var(--card)] transition-colors active:scale-95">
+        <span class="text-lg">📊</span>
+        <span class="text-[10px] text-[var(--muted-foreground)] font-semibold">Summary</span>
+      </button>
+
+      <!-- BIG FLOATING CENTER ACTION BUTTON -->
+      <button onclick="triggerQuickAction()" id="bigCenterBtn" class="flex items-center justify-center w-12 h-12 -mt-4 rounded-2xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-xl cursor-pointer hover:opacity-95 transition-all active:scale-95 border-2 border-[var(--background)]" title="Input Data">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+
+      <button onclick="openModal('form-masuk')" class="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl cursor-pointer hover:bg-[var(--card)] transition-colors active:scale-95">
+        <span class="text-lg">📥</span>
+        <span class="text-[10px] text-[var(--muted-foreground)] font-semibold">Masuk</span>
+      </button>
+
+      <button onclick="selectMode()" class="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl cursor-pointer hover:bg-[var(--card)] transition-colors active:scale-95">
+        <svg class="w-5 h-5 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        <span class="text-[10px] text-[var(--muted-foreground)] font-semibold">Pilih</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ SELECT MODE ACTION BAR ═══ -->
+  <div id="selectBar" class="fixed bottom-0 left-0 right-0 z-50 bg-[var(--card)] border-t border-[var(--border)] safe-bottom hidden shadow-2xl">
+    <div class="flex items-center justify-between px-4 sm:px-6 py-3 max-w-7xl mx-auto">
+      <div class="flex items-center gap-3">
+        <button onclick="exitSelectMode()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--content)] cursor-pointer text-[var(--muted-foreground)] text-lg">&times;</button>
+        <span class="text-xs sm:text-sm font-bold"><strong id="selectedCount">0</strong> baris dipilih</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="selectAllVisible()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">Pilih Semua</button>
+        <button onclick="bulkDeleteWithPin()" id="bulkDelBtn" class="px-3 sm:px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--error)] text-white hover:opacity-90 cursor-pointer disabled:opacity-40" disabled>
+          🔒 Hapus Terpilih
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL 1: FORM BARANG MASUK ═══ -->
+  <div id="modal-form-masuk" class="fixed inset-0 z-50 hidden flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    <div class="modal-backdrop fixed inset-0 bg-black/60" onclick="closeModal('form-masuk')"></div>
+    <div class="responsive-modal-box relative w-full max-w-2xl bg-[var(--background)] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden z-10 flex flex-col">
+      <!-- Drag handle for mobile -->
+      <div class="w-12 h-1 rounded-full bg-[var(--border)] mx-auto mt-2.5 sm:hidden"></div>
+      
+      <div class="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border)] bg-[var(--card)]">
+        <div>
+          <h2 class="text-sm sm:text-base font-extrabold">Input Barang Masuk Baru</h2>
+          <p class="text-[11px] sm:text-xs text-[var(--muted-foreground)]">Mencatat ke sheet <strong>FORM BARANG MASUK</strong> (Kolom B-F)</p>
+        </div>
+        <button onclick="closeModal('form-masuk')" class="w-8 h-8 rounded-lg hover:bg-[var(--content)] flex items-center justify-center cursor-pointer text-lg">&times;</button>
+      </div>
+
+      <div class="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[75vh]">
+        <!-- Live Formula Preview Kolom A -->
+        <div class="p-3 sm:p-3.5 rounded-xl border border-[var(--card-border)] bg-[var(--card)] space-y-1 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold text-[var(--link)] uppercase tracking-wider">Rumus Kolom A (Kode Barang Otomatis)</span>
+            <span class="text-[10px] text-[var(--muted-foreground)] font-mono" id="fbmNextNumLabel">Nomor Urut: #0719</span>
+          </div>
+          <p id="fbmGeneratedCode" class="text-xs sm:text-sm font-mono font-bold text-[var(--foreground)] break-all">(KITCHEN)Nama Barang(SATUAN)0000</p>
+          <div class="flex items-center justify-between text-[9px] text-[var(--muted-foreground)] font-mono pt-1 border-t border-[var(--card-border)]">
+            <span class="truncate">=IF(C2=""; ""; ("("&amp;F2&amp;")" &amp; C2 &amp; "("&amp;D2&amp;")" &amp; TEXT(COUNTA(B$2:B2); "0000")))</span>
+            <span class="text-[var(--link)] font-bold flex-shrink-0 ml-1">Pemisah: ;</span>
+          </div>
+        </div>
+
+        <!-- Kolom B: Tanggal Barang Masuk -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-[var(--muted-foreground)]">Tanggal Barang Masuk (Kolom B) *</label>
+            <span class="text-[11px] text-[var(--link)] font-semibold cursor-pointer" onclick="setFbmDate(getTodayDateStr())">Hari Ini</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="fbm-tgl" type="text" placeholder="DD/MM/YYYY"
+              list="fbmRecentDatesList"
+              oninput="updateFbmCodePreview()"
+              class="flex-1 px-3.5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+            <div class="relative flex items-center">
+              <input id="fbm-native-date" type="date" onchange="onNativeDateChange(this.value)" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+              <button type="button" class="px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--content)] text-xs font-bold flex items-center gap-1 cursor-pointer">
+                📅 <span class="hidden sm:inline">Pilih</span>
+              </button>
+            </div>
+          </div>
+          <datalist id="fbmRecentDatesList"></datalist>
+
+          <!-- Quick Date Suggestion Chips -->
+          <div class="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide pb-0.5">
+            <span class="text-[10px] text-[var(--muted-foreground)] font-bold flex-shrink-0">Sugesti:</span>
+            <div id="dateSuggestionChips" class="flex gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Grid: Nama Barang & Satuan -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div class="relative">
+            <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Nama Barang (Kolom C) *</label>
+            <input id="fbm-nama" type="text" placeholder="Ketik nama barang..."
+              autocomplete="off"
+              oninput="updateFbmCodePreview(); onFbmNamaInput(this.value);"
+              class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+            <div id="fbmNamaSuggestions" class="hidden absolute left-0 right-0 top-full mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl z-50 divide-y divide-[var(--card-border)]"></div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Satuan (Kolom D) *</label>
+            <div class="flex gap-1.5">
+              <select id="fbm-satuan" onchange="updateFbmCodePreview()" class="flex-1 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--border)] bg-[var(--content)]">
+                <option value="BOTOL">BOTOL</option>
+                <option value="KG">KG</option>
+                <option value="PACK">PACK</option>
+                <option value="PCS">PCS</option>
+                <option value="KOTAK">KOTAK</option>
+                <option value="PAPAN">PAPAN</option>
+                <option value="KALENG">KALENG</option>
+                <option value="DUS">DUS</option>
+                <option value="PAIL">PAIL</option>
+                <option value="ROLL">ROLL</option>
+                <option value="KARUNG">KARUNG</option>
+                <option value="TIM">TIM</option>
+                <option value="JERIGEN">JERIGEN</option>
+                <option value="GR">GR</option>
+                <option value="BUNGKUS">BUNGKUS</option>
+              </select>
+              <input id="fbm-custom-satuan" type="text" placeholder="Lainnya..."
+                oninput="document.getElementById('fbm-satuan').value=''; updateFbmCodePreview();"
+                class="w-20 sm:w-24 px-2 py-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid: Jumlah Masuk (E) & Divisi (F) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Jumlah Masuk - IN (Kolom E) *</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="adjustFbmInQty(-1)" class="w-11 h-11 rounded-xl border border-[var(--border)] bg-[var(--content)] text-sm font-bold active:scale-95 cursor-pointer">-1</button>
+              <input id="fbm-qty" type="number" step="any" min="0.001" value="1"
+                class="flex-1 py-2 text-center text-base sm:text-lg font-black rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+              <button type="button" onclick="adjustFbmInQty(1)" class="w-11 h-11 rounded-xl border border-[var(--border)] bg-[var(--content)] text-sm font-bold active:scale-95 cursor-pointer">+1</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Divisi (Kolom F) *</label>
+            <select id="fbm-divisi" onchange="updateFbmCodePreview()" class="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--border)] bg-[var(--content)]">
+              <option value="KITCHEN">KITCHEN</option>
+              <option value="BAR">BAR</option>
+              <option value="PASTRY">PASTRY</option>
+              <option value="POWER UP">POWER UP</option>
+              <option value="EMPLOYEE MEALS">EMPLOYEE MEALS</option>
+              <option value="SERVER">SERVER</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 border-t border-[var(--border)] bg-[var(--card)] flex flex-col sm:flex-row items-center justify-between gap-3 safe-bottom">
+        <p class="text-[11px] text-[var(--muted-foreground)] hidden sm:block">Menambah baris ke FORM BARANG MASUK dan memperbarui stok INVENTORY.</p>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button type="button" onclick="closeModal('form-masuk')" class="flex-1 sm:flex-initial px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">Batal</button>
+          <button id="saveFbmBtn" onclick="submitFormBarangMasuk()" class="flex-1 sm:flex-initial px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+            <span>💾 Simpan Masuk</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL 2: INPUT KE SR ═══ -->
+  <div id="modal-input-sr" class="fixed inset-0 z-50 hidden flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    <div class="modal-backdrop fixed inset-0 bg-black/60" onclick="closeModal('input-sr')"></div>
+    <div class="responsive-modal-box relative w-full max-w-2xl bg-[var(--background)] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden z-10 flex flex-col">
+      <div class="w-12 h-1 rounded-full bg-[var(--border)] mx-auto mt-2.5 sm:hidden"></div>
+
+      <div class="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border)] bg-[var(--card)]">
+        <div>
+          <h2 class="text-sm sm:text-base font-extrabold">Input Pengeluaran Barang (SR)</h2>
+          <p class="text-[11px] sm:text-xs text-[var(--muted-foreground)]">Input Kolom B & D (Kolom A, C, E Otomatis Rumus Semicolon <code class="text-[var(--link)] font-bold">;</code>)</p>
+        </div>
+        <button onclick="closeModal('input-sr')" class="w-8 h-8 rounded-lg hover:bg-[var(--content)] flex items-center justify-center cursor-pointer text-lg">&times;</button>
+      </div>
+
+      <div class="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[75vh]">
+        <!-- Target Sheet SR Dropdown -->
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Target Sheet SR *</label>
+          <select id="in-target-sr" onchange="onTargetSrChanged(this.value)" class="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--border)] bg-[var(--content)]">
+            <!-- Diisi dari JS -->
+          </select>
+        </div>
+
+        <!-- Kolom B: Cari & Pilih Kode Barang -->
+        <div class="relative">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-[var(--muted-foreground)]">Pilih Barang (Kolom B) *</label>
+            <span class="text-[11px] text-[var(--link)] font-semibold">Ketik nama, kode, atau divisi</span>
+          </div>
+          <input id="in-search-item" type="text" placeholder="Ketik nama atau kode barang..."
+            autocomplete="off"
+            oninput="onItemSearchInput(this.value)"
+            class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+          <div id="itemSuggestions" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl z-50 divide-y divide-[var(--card-border)]"></div>
+        </div>
+
+        <!-- Preview Rumus Otomatis (Kolom A, C, E) -->
+        <div id="selectedItemPreview" class="hidden p-3 sm:p-4 rounded-xl border border-[var(--card-border)] bg-[var(--card)] space-y-2.5 shadow-xs">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p id="prevNama" class="text-xs sm:text-sm font-bold leading-tight"></p>
+              <p id="prevKode" class="text-[11px] font-mono text-[var(--link)] mt-0.5 break-all"></p>
+            </div>
+            <span id="prevDivisi" class="px-2 py-0.5 rounded-md text-[10px] font-bold"></span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-[var(--card-border)] text-[11px]">
+            <div class="p-2 sm:p-2.5 rounded-lg bg-[var(--content)]">
+              <span class="text-[9px] text-[var(--muted-foreground)] font-mono block">=XLOOKUP(B;INVENTORY!A:A;B:B)</span>
+              <span class="text-[10px] text-[var(--muted-foreground)] block mt-0.5">Kolom A (Batch Masuk):</span>
+              <strong id="prevTglMasuk" class="text-xs font-bold text-[var(--foreground)]">-</strong>
+            </div>
+            <div class="p-2 sm:p-2.5 rounded-lg bg-[var(--content)]">
+              <span class="text-[9px] text-[var(--muted-foreground)] font-mono block">=XLOOKUP(B;INVENTORY!A:A;I:I)</span>
+              <span class="text-[10px] text-[var(--muted-foreground)] block mt-0.5">Kolom C (Sisa Stok):</span>
+              <strong id="prevStock" class="text-xs font-bold text-[var(--success)]">0</strong>
+            </div>
+            <div class="p-2 sm:p-2.5 rounded-lg bg-[var(--content)]">
+              <span class="text-[9px] text-[var(--muted-foreground)] font-mono block">=IF(D&lt;&gt;"";$F$1;"")</span>
+              <span class="text-[10px] text-[var(--muted-foreground)] block mt-0.5">Kolom E (Tgl SR):</span>
+              <strong id="prevTglSrFormula" class="text-xs font-bold text-[var(--link)]">SR1</strong>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" id="in-kode-barang" />
+        <input type="hidden" id="in-nama-barang" />
+        <input type="hidden" id="in-divisi" />
+        <input type="hidden" id="in-satuan" />
+        <input type="hidden" id="in-tgl-masuk" />
+        <input type="hidden" id="in-sisa-stock" value="0" />
+
+        <!-- Kolom D: Jumlah OUT -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-[var(--muted-foreground)]">Jumlah Pengeluaran - OUT (Kolom D) *</label>
+            <span id="remainingCalc" class="text-[11px] text-[var(--muted-foreground)]"></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="adjustOutQty(-1)" class="w-11 h-11 rounded-xl border border-[var(--border)] bg-[var(--content)] text-sm font-bold active:scale-95 cursor-pointer">-1</button>
+            <input id="in-qty-out" type="number" step="any" min="0.1" value="1" oninput="calculateStockRemaining()"
+              class="flex-1 py-2 text-center text-base sm:text-lg font-black rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+            <button type="button" onclick="adjustOutQty(1)" class="w-11 h-11 rounded-xl border border-[var(--border)] bg-[var(--content)] text-sm font-bold active:scale-95 cursor-pointer">+1</button>
+          </div>
+          <div class="flex gap-1.5 mt-2 overflow-x-auto scrollbar-hide">
+            <button type="button" onclick="setOutQty(0.5)" class="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] cursor-pointer">+0.5</button>
+            <button type="button" onclick="setOutQty(1)" class="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] cursor-pointer">1</button>
+            <button type="button" onclick="setOutQty(2)" class="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] cursor-pointer">2</button>
+            <button type="button" onclick="setOutQty(5)" class="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] cursor-pointer">5</button>
+            <button type="button" onclick="setOutQty(10)" class="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] cursor-pointer">10</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 border-t border-[var(--border)] bg-[var(--card)] flex flex-col sm:flex-row items-center justify-between gap-3 safe-bottom">
+        <p class="text-[11px] text-[var(--muted-foreground)] hidden sm:block">Hanya menulis di Kolom B & D. Kolom A, C, E mengikuti formula dengan pemisah <code class="text-[var(--link)] font-bold">;</code></p>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button type="button" onclick="closeModal('input-sr')" class="flex-1 sm:flex-initial px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">Batal</button>
+          <button id="saveSrBtn" onclick="submitSrInput()" class="flex-1 sm:flex-initial px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+            <span>💾 Simpan SR</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL 3: PIN ADMIN ═══ -->
+  <div id="modal-pin" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/75" onclick="closePinModal()"></div>
+    <div class="responsive-modal-box relative w-full max-w-xs bg-[var(--background)] rounded-3xl shadow-2xl border border-[var(--border)] overflow-hidden z-10 flex flex-col">
+      <div class="flex items-center justify-between px-6 pt-5 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔐</span>
+          <div>
+            <h3 class="text-sm font-bold">Otorisasi PIN Admin</h3>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Diperlukan untuk aksi penghapusan</p>
+          </div>
+        </div>
+        <button onclick="closePinModal()" class="w-8 h-8 rounded-full hover:bg-[var(--content)] flex items-center justify-center text-lg">&times;</button>
+      </div>
+
+      <div class="py-4 flex flex-col items-center">
+        <div id="pinDotsContainer" class="flex items-center gap-4 mb-2">
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-[var(--border)] bg-[var(--card)] transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-[var(--border)] bg-[var(--card)] transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-[var(--border)] bg-[var(--card)] transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-[var(--border)] bg-[var(--card)] transition-all"></span>
+        </div>
+        <p id="pinStatusText" class="text-xs text-[var(--muted-foreground)]">Masukkan 4 Digit PIN (Default: 1234)</p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2.5 px-6 pb-6">
+        <button type="button" onclick="pressPinKey('1')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">1</button>
+        <button type="button" onclick="pressPinKey('2')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">2</button>
+        <button type="button" onclick="pressPinKey('3')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">3</button>
+
+        <button type="button" onclick="pressPinKey('4')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">4</button>
+        <button type="button" onclick="pressPinKey('5')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">5</button>
+        <button type="button" onclick="pressPinKey('6')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">6</button>
+
+        <button type="button" onclick="pressPinKey('7')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">7</button>
+        <button type="button" onclick="pressPinKey('8')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">8</button>
+        <button type="button" onclick="pressPinKey('9')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">9</button>
+
+        <button type="button" onclick="clearPinInput()" class="h-12 rounded-2xl bg-[var(--content)] text-xs font-bold active:scale-95 text-[var(--muted-foreground)]">C</button>
+        <button type="button" onclick="pressPinKey('0')" class="h-12 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] text-base font-bold active:scale-95 transition-transform">0</button>
+        <button type="button" onclick="backspacePinKey()" class="h-12 rounded-2xl bg-[var(--content)] text-sm font-bold active:scale-95 text-[var(--muted-foreground)]">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL 5: SETTINGS & APPS SCRIPT WEB APP ═══ -->
+  <div id="modal-settings" class="fixed inset-0 z-50 hidden flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    <div class="modal-backdrop fixed inset-0 bg-black/60" onclick="closeModal('settings')"></div>
+    <div class="responsive-modal-box relative w-full max-w-2xl bg-[var(--background)] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden z-10 flex flex-col">
+      <div class="w-12 h-1 rounded-full bg-[var(--border)] mx-auto mt-2.5 sm:hidden"></div>
+
+      <div class="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border)] bg-[var(--card)]">
+        <h2 class="text-sm sm:text-base font-bold">Pengaturan Spreadsheet & Formula</h2>
+        <button onclick="closeModal('settings')" class="w-8 h-8 rounded-lg hover:bg-[var(--content)] flex items-center justify-center cursor-pointer">&times;</button>
+      </div>
+      <div class="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">URL Google Spreadsheet</label>
+          <input id="cfg-sheet-url" type="url" class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+          <p class="text-[10px] text-[var(--muted-foreground)] mt-1">ID Spreadsheet: <code class="text-[var(--link)]">1Ak4_H83jYQRdctgN9gNEhXFxp6oxSKMXnwlxGCFMeDs</code></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1 text-[var(--muted-foreground)]">Google Apps Script Web App URL (Auto-Save 2 Arah)</label>
+          <input id="cfg-webapp-url" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+        </div>
+
+        <!-- Accordion Apps Script Code -->
+        <details class="rounded-xl border border-[var(--card-border)] bg-[var(--card)] overflow-hidden">
+          <summary class="px-4 py-3 text-xs font-bold cursor-pointer hover:bg-[var(--content)] flex items-center justify-between">
+            <span>📖 Kode Apps Script Terbaru (Pemisah Semicolon ;)</span>
+            <span class="text-[10px] text-[var(--link)]">Lihat Script</span>
+          </summary>
+          <div class="p-4 border-t border-[var(--card-border)] space-y-3 text-xs text-[var(--muted-foreground)]">
+            <p>Paste kode berikut di <strong>Extensions → Apps Script</strong> Spreadsheet Anda:</p>
+            <div class="relative">
+              <pre id="appsScriptSnippet" class="p-3 bg-black text-green-400 font-mono text-[10px] rounded-lg overflow-x-auto whitespace-pre">function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. INPUT FORM BARANG MASUK (Kolom B-F Nilai, Kolom A Rumus ;)
+  if (data.action === 'input_fbm') {
+    var sheet = ss.getSheetByName('FORM BARANG MASUK');
+    if (!sheet) sheet = ss.insertSheet('FORM BARANG MASUK');
+    var row = sheet.getLastRow() + 1;
+    sheet.getRange(row, 2).setValue(data.tglMasuk);
+    sheet.getRange(row, 3).setValue(data.namaBarang);
+    sheet.getRange(row, 4).setValue(data.satuan);
+    sheet.getRange(row, 5).setValue(data.inQty);
+    sheet.getRange(row, 6).setValue(data.divisi);
+    
+    // Rumus Kolom A dengan pemisah semicolon (;)
+    var fbmFormula = '=IF(C' + row + '="";"";("("&F' + row + '&")"&C' + row + '&"("&D' + row + '&")"&TEXT(COUNTA(B$2:B' + row + ');"0000")))';
+    try {
+      sheet.getRange(row, 1).setFormula(fbmFormula);
+    } catch(err) {
+      sheet.getRange(row, 1).setFormula('=IF(C' + row + '="","",("("&F' + row + '&")"&C' + row + '&"("&D' + row + '&")"&TEXT(COUNTA(B$2:B' + row + '),"0000")))');
+    }
+    return ContentService.createTextOutput(JSON.stringify({status: 'success', row: row})).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 2. INPUT PENGELUARAN SR (Kolom B, D Nilai; Kolom A, C, E Rumus ;)
+  if (data.action === 'input_sr') {
+    var sheetName = data.sheetName || 'SR1';
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) sheet = ss.insertSheet(sheetName);
+    var row = sheet.getLastRow() + 1;
+    sheet.getRange(row, 2).setValue(data.kodeBarang);
+    sheet.getRange(row, 4).setValue(data.out);
+    
+    // Rumus Kolom A, C, E dengan pemisah semicolon (;)
+    var formA = '=IFNA(XLOOKUP(B' + row + ';INVENTORY!A:A;INVENTORY!B:B;"-";0);"")';
+    var formC = '=IFNA(XLOOKUP(B' + row + ';INVENTORY!A:A;INVENTORY!I:I;0;0);"")';
+    var formE = '=IF(D' + row + '<>"";"' + sheetName + '";"")';
+    
+    try {
+      sheet.getRange(row, 1).setFormula(formA);
+      sheet.getRange(row, 3).setFormula(formC);
+      sheet.getRange(row, 5).setFormula(formE);
+    } catch(err) {
+      sheet.getRange(row, 1).setFormula('=IFNA(XLOOKUP(B' + row + ',INVENTORY!A:A,INVENTORY!B:B,"-",0),"")');
+      sheet.getRange(row, 3).setFormula('=IFNA(XLOOKUP(B' + row + ',INVENTORY!A:A,INVENTORY!I:I,0,0),"")');
+      sheet.getRange(row, 5).setFormula('=IF(D' + row + '<>"","' + sheetName + '","")');
+    }
+    return ContentService.createTextOutput(JSON.stringify({status: 'success', row: row})).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({status: 'ignored'})).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+              <button onclick="copyAppsScriptCode()" class="mt-2 px-3 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] cursor-pointer">
+                📋 Salin Kode Apps Script
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Keamanan PIN Admin -->
+        <div class="p-3.5 rounded-xl border border-[var(--card-border)] bg-[var(--card)] space-y-2">
+          <p class="text-xs font-bold text-[var(--foreground)]">Ubah PIN Admin (Keamanan Stock Keeper)</p>
+          <div class="flex gap-2">
+            <input id="cfg-new-pin" type="password" maxlength="4" placeholder="PIN Baru (4 Digit)" class="w-1/2 px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--content)]" />
+            <button onclick="changeAdminPin()" class="flex-1 py-2 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] cursor-pointer">Simpan PIN</button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2 safe-bottom">
+          <button onclick="saveConnectionSettings()" class="flex-1 py-2.5 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] cursor-pointer hover:opacity-90">Simpan Pengaturan</button>
+          <button onclick="quickSyncSheets(); closeModal('settings');" class="flex-1 py-2.5 text-xs font-semibold rounded-xl border border-[var(--border)] hover:bg-[var(--card)] cursor-pointer">Tarik Data Ulang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL 6: DETAIL BARANG / TRANSAKSI ═══ -->
+  <div id="modal-detail" class="fixed inset-0 z-50 hidden flex items-center justify-center p-0 sm:p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/60" onclick="closeModal('detail')"></div>
+    <div class="responsive-modal-box relative w-full max-w-md bg-[var(--background)] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden z-10 flex flex-col">
+      <div class="w-12 h-1 rounded-full bg-[var(--border)] mx-auto mt-2.5 sm:hidden"></div>
+      <div id="detailContent" class="p-5 sm:p-6 safe-bottom"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-3 left-4 right-4 z-[70] space-y-2 flex flex-col items-center pointer-events-none"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// KONFIGURASI SPREADSHEET TARGET
+// ═══════════════════════════════════════════════════════════════
+const SPREADSHEET_ID = "1Ak4_H83jYQRdctgN9gNEhXFxp6oxSKMXnwlxGCFMeDs";
+const DEFAULT_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit?gid=453156449#gid=453156449`;
+
+const STORAGE_KEYS = {
+  INVENTORY: 'sr_inventory_v5',
+  FORM_MASUK: 'sr_form_masuk_v5',
+  SUMMARY_SR: 'sr_summary_sr_v5',
+  SR_SHEETS: 'sr_sheets_records_v5',
+  CONFIG: 'sr_config_v5',
+  THEME: 'sr_inventory_theme',
+  ADMIN_PIN: 'sr_admin_pin_v5',
+  VIEW_MODE: 'sr_view_mode_pref'
+};
+
+const MASTER_NAMA_BARANG = [
+  "Parsley Jays 20 Gr", "Gula Pasir", "Telur", "Tepung Beras Rose Brand 500 Gr", "Basil Leaves Jays 20 Gr",
+  "Cabe Bubuk Koepoe 1000 Gr", "Thyme Leaves Jays 27 Gr", "Bay Leaves 8 gr", "Wijen Panggang Koepoe 90 Gr",
+  "Royco Sapi 220 Gr", "Merica Putih Halus Abrofood 1000 Gr", "Kecap Asin Angsa 600 Ml", "Mushroom Dark Soy Sauce PRB 600 Ml",
+  "Yellow Cheddar Anchor 82 slices", "Tepung Tapioka Tani 500 Gr", "Powder Red Velvet Revoneiro 500 Gr",
+  "Powder Taro Revoneiro 500 Gr", "Powder Salted Machiato Toffin 1000 Gr", "Syrup Strawberry Monin 700 Ml",
+  "Biskuit Lotus Biscoff 250 Gr", "Syrup Peach Monin 700 Ml", "Syrup Lemonade Monin 700 Ml", "Minyak Goreng Sari Murni 2000 Ml",
+  "Saus Tomat Belibis 5000 Gr", "Thinwall 1000 Ml", "Kentang Shoestring", "Kentang Crinkle", "Daging Sapi Inside",
+  "Ayam Potong 4", "Beras Bujang Marantau 30000 Gr", "Beans Blend Espresso 1000 Gr", "SKM Carnation 488 Gr",
+  "Handglove Karet M", "Sabun Cuci Piring Mama Lemon 610 Ml", "Detergent Daia", "Susu UHT Diamond 1000 Ml",
+  "Ramyun Spicy Chicken Nongshim 120 Gr", "Chocolatos", "Leci Kaleng Mamata 565 Gr", "Kertas Thermal Forte 80*80"
+];
+
+// State
+let inventoryData = [];
+let formMasukData = [];
+let summarySrData = [];
+let srSheetsData = {};
+let activeSheet = 'INVENTORY';
+let currentDisplayItems = [];
+let selectedIndices = new Set();
+let inSelectMode = false;
+
+// Filter Kolom Bergaya Validasi Data (Data Validation Filters)
+let columnFilters = {
+  divisi: '',
+  namaBarang: '',
+  kodeBarang: '',
+  satuan: '',
+  tglMasuk: '',
+  tglSr: '',
+  stokStatus: ''
+};
+
+// Deteksi otomatis Desktop vs Handphone
+const isMobileDevice = window.innerWidth < 768;
+let currentViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE) || (isMobileDevice ? 'cards' : 'table');
+
+// Admin Security State
+let isAdminMode = false;
+let adminPin = '1234';
+let pendingAdminAction = null;
+let pinInputBuffer = '';
+
+// Divisi Badge Colors
+const divisiColors = {
+  'KITCHEN': { bg: '#fef3c7', text: '#b45309', border: '#fde68a' },
+  'BAR': { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd' },
+  'PASTRY': { bg: '#f3e8ff', text: '#7e22ce', border: '#e9d5ff' },
+  'POWER UP': { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' },
+  'EMPLOYEE MEALS': { bg: '#ccfbf1', text: '#0f766e', border: '#99f6e4' },
+  'SERVER': { bg: '#ede9fe', text: '#6d28d9', border: '#ddd6fe' }
+};
+
+// ═══ HELPER FORMAT & NUMBER ═══
+function parseIndoNumber(str) {
+  if (typeof str === 'number') return str;
+  if (!str) return 0;
+  const s = String(str).trim();
+  const clean = s.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(clean);
+  return isNaN(num) ? 0 : num;
+}
+
+function formatIndoQty(num) {
+  if (num === null || num === undefined) return '0';
+  const n = Number(num);
+  if (Number.isInteger(n)) return n.toLocaleString('id-ID');
+  return n.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function highlightText(text, query) {
+  if (!query) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const q = escapeHtml(query);
+  return escaped.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<span class="highlight">$1</span>');
+}
+
+function parseKodeBarangInfo(kode) {
+  const m = String(kode).match(/^\(([^)]+)\)(.*?)\(([^)]+)\)(.*)$/);
+  if (m) {
+    return { divisi: m[1].trim(), nama: m[2].trim(), satuan: m[3].trim(), nomor: m[4].trim() };
+  }
+  return { divisi: 'UMUM', nama: kode, satuan: 'PCS', nomor: '' };
+}
+
+// ═══ DATE HELPERS & SUGGESTIONS ═══
+function formatDateIndo(dateObj) {
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const y = dateObj.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+function getTodayDateStr() {
+  return formatDateIndo(new Date());
+}
+
+function renderDateSuggestions() {
+  const today = new Date();
+  const dates = [];
+
+  dates.push({ label: 'Hari Ini', date: formatDateIndo(today) });
+
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  dates.push({ label: 'Kemarin', date: formatDateIndo(yest) });
+
+  const d2 = new Date(today);
+  d2.setDate(today.getDate() - 2);
+  dates.push({ label: '2 Hari Lalu', date: formatDateIndo(d2) });
+
+  const d3 = new Date(today);
+  d3.setDate(today.getDate() - 3);
+  dates.push({ label: '3 Hari Lalu', date: formatDateIndo(d3) });
+
+  const startMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  dates.push({ label: 'Awal Bulan', date: formatDateIndo(startMonth) });
+
+  const container = document.getElementById('dateSuggestionChips');
+  if (container) {
+    container.innerHTML = dates.map(it => `
+      <button type="button" onclick="setFbmDate('${it.date}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)] hover:bg-[var(--content)] transition-all cursor-pointer flex-shrink-0 active:scale-95">
+        ${it.label} (${it.date.slice(0, 5)})
+      </button>
+    `).join('');
+  }
+
+  const dl = document.getElementById('fbmRecentDatesList');
+  if (dl) {
+    const set = new Set();
+    formMasukData.forEach(f => { if (f.tglMasuk) set.add(f.tglMasuk); });
+    inventoryData.forEach(i => { if (i.tglMasuk) set.add(i.tglMasuk); });
+    dl.innerHTML = [...set].slice(0, 10).map(d => `<option value="${escapeHtml(d)}"></option>`).join('');
+  }
+}
+
+function setFbmDate(dateStr) {
+  document.getElementById('fbm-tgl').value = dateStr;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    document.getElementById('fbm-native-date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  updateFbmCodePreview();
+}
+
+function onNativeDateChange(val) {
+  if (!val) return;
+  const parts = val.split('-');
+  if (parts.length === 3) {
+    const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    document.getElementById('fbm-tgl').value = formatted;
+    updateFbmCodePreview();
+  }
+}
+
+// ═══ LOCAL STORAGE & CONFIG ═══
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CONFIG);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { sheetUrl: DEFAULT_URL, webAppUrl: '' };
+}
+
+function saveConfig(cfg) {
+  try { localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(cfg)); } catch (e) {}
+}
+
+function loadLocalData() {
+  try {
+    const rPin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN);
+    if (rPin) adminPin = rPin;
+
+    const rVm = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
+    if (rVm) currentViewMode = rVm;
+
+    const rInv = localStorage.getItem(STORAGE_KEYS.INVENTORY);
+    if (rInv) inventoryData = JSON.parse(rInv);
+
+    const rFbm = localStorage.getItem(STORAGE_KEYS.FORM_MASUK);
+    if (rFbm) formMasukData = JSON.parse(rFbm);
+
+    const rSum = localStorage.getItem(STORAGE_KEYS.SUMMARY_SR);
+    if (rSum) summarySrData = JSON.parse(rSum);
+
+    const rSr = localStorage.getItem(STORAGE_KEYS.SR_SHEETS);
+    if (rSr) srSheetsData = JSON.parse(rSr);
+  } catch (e) {}
+}
+
+function saveLocalData() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(inventoryData));
+    localStorage.setItem(STORAGE_KEYS.FORM_MASUK, JSON.stringify(formMasukData));
+    localStorage.setItem(STORAGE_KEYS.SUMMARY_SR, JSON.stringify(summarySrData));
+    localStorage.setItem(STORAGE_KEYS.SR_SHEETS, JSON.stringify(srSheetsData));
+  } catch (e) {}
+}
+
+// ═══ INISIALISASI ═══
+function init() {
+  updateThemeIcons();
+  loadLocalData();
+
+  const cfg = loadConfig();
+  document.getElementById('cfg-sheet-url').value = cfg.sheetUrl;
+  document.getElementById('cfg-webapp-url').value = cfg.webAppUrl;
+
+  populateSrSelectOptions();
+  updateViewModeUI();
+  switchSheet('INVENTORY');
+  renderDateSuggestions();
+
+  quickSyncSheets(true);
+}
+
+function populateSrSelectOptions() {
+  const grp = document.getElementById('srOptGroup');
+  const dSel = document.getElementById('desktopSrDropdown');
+  const inSrSel = document.getElementById('in-target-sr');
+
+  let optHtml = '';
+  let inOptHtml = '';
+  let dOptHtml = '<option value="">📋 Pilih SR (1-31)...</option>';
+
+  for (let i = 1; i <= 31; i++) {
+    const name = `SR${i}`;
+    optHtml += `<option value="${name}">📋 ${name} (Tanggal ${i})</option>`;
+    inOptHtml += `<option value="${name}">📋 ${name} (Tanggal ${i})</option>`;
+    dOptHtml += `<option value="${name}">📋 ${name}</option>`;
+  }
+
+  grp.innerHTML = optHtml;
+  dSel.innerHTML = dOptHtml;
+  inSrSel.innerHTML = inOptHtml;
+}
+
+function toggleViewMode() {
+  currentViewMode = currentViewMode === 'table' ? 'cards' : 'table';
+  localStorage.setItem(STORAGE_KEYS.VIEW_MODE, currentViewMode);
+  updateViewModeUI();
+  filterData();
+  showToast(`Tampilan: ${currentViewMode === 'table' ? 'Mode Tabel' : 'Mode Kartu'}`, 'info');
+}
+
+function updateViewModeUI() {
+  const isTable = currentViewMode === 'table';
+  document.getElementById('viewModeIcon').textContent = isTable ? '🎴' : '📋';
+  document.getElementById('viewModeText').textContent = isTable ? 'Kartu' : 'Tabel';
+}
+
+function toggleFilterPanel() {
+  const p = document.getElementById('filterPanelWrapper');
+  p.classList.toggle('hidden');
+}
+
+function jumpToTodaySr() {
+  const day = new Date().getDate();
+  const targetSr = `SR${Math.min(Math.max(day, 1), 31)}`;
+  switchSheet(targetSr);
+  showToast(`Beralih ke ${targetSr} (Hari ini)`, 'info');
+}
+
+function navigateSr(delta) {
+  if (activeSheet.startsWith('SR')) {
+    const match = activeSheet.match(/^SR(\d+)$/);
+    if (match) {
+      let num = parseInt(match[1]) + delta;
+      if (num < 1) num = 31;
+      if (num > 31) num = 1;
+      switchSheet(`SR${num}`);
+      return;
+    }
+  }
+  if (activeSheet === 'INVENTORY') switchSheet(delta > 0 ? 'SUMMARY SR' : 'SR31');
+  else if (activeSheet === 'SUMMARY SR') switchSheet(delta > 0 ? 'FORM BARANG MASUK' : 'INVENTORY');
+  else if (activeSheet === 'FORM BARANG MASUK') switchSheet(delta > 0 ? 'SR1' : 'SUMMARY SR');
+}
+
+function onSheetChange(sheetName) {
+  switchSheet(sheetName);
+}
+
+function updateDesktopTabsHighlight(sheetName) {
+  ['INVENTORY', 'SUMMARY', 'FORM'].forEach(id => {
+    const el = document.getElementById(`dtab-${id}`);
+    if (el) {
+      el.classList.remove('bg-[var(--primary)]', 'text-[var(--primary-foreground)]');
+      el.classList.add('text-[var(--muted-foreground)]');
+    }
+  });
+
+  const dSel = document.getElementById('desktopSrDropdown');
+  if (sheetName === 'INVENTORY') {
+    const el = document.getElementById('dtab-INVENTORY');
+    el.classList.add('bg-[var(--primary)]', 'text-[var(--primary-foreground)]');
+    el.classList.remove('text-[var(--muted-foreground)]');
+    dSel.value = '';
+  } else if (sheetName === 'SUMMARY SR') {
+    const el = document.getElementById('dtab-SUMMARY');
+    el.classList.add('bg-[var(--primary)]', 'text-[var(--primary-foreground)]');
+    el.classList.remove('text-[var(--muted-foreground)]');
+    dSel.value = '';
+  } else if (sheetName === 'FORM BARANG MASUK') {
+    const el = document.getElementById('dtab-FORM');
+    el.classList.add('bg-[var(--primary)]', 'text-[var(--primary-foreground)]');
+    el.classList.remove('text-[var(--muted-foreground)]');
+    dSel.value = '';
+  } else if (sheetName.startsWith('SR')) {
+    dSel.value = sheetName;
+  }
+}
+
+function switchSheet(sheetName) {
+  activeSheet = sheetName;
+  document.getElementById('sheetSelector').value = sheetName;
+  document.getElementById('headerSrBadge').textContent = sheetName;
+  updateDesktopTabsHighlight(sheetName);
+
+  const typeLabel = document.getElementById('sheetTypeLabel');
+  const qtyLabel = document.getElementById('totalQtyLabel');
+
+  if (sheetName === 'INVENTORY') {
+    typeLabel.textContent = 'CHECK STOCK TERSEDIA';
+    qtyLabel.textContent = 'Total Stok';
+  } else if (sheetName === 'SUMMARY SR') {
+    typeLabel.textContent = 'SUMMARY OUT (SR1 - SR31)';
+    qtyLabel.textContent = 'Total OUT';
+  } else if (sheetName === 'FORM BARANG MASUK') {
+    typeLabel.textContent = 'FORM BARANG MASUK';
+    qtyLabel.textContent = 'Total Masuk (IN)';
+  } else {
+    typeLabel.textContent = `PENGELUARAN ${sheetName}`;
+    qtyLabel.textContent = 'Total OUT';
+  }
+
+  if (sheetName.startsWith('SR') && (!srSheetsData[sheetName] || !srSheetsData[sheetName].length)) {
+    fetchSheetCsv(sheetName);
+  }
+
+  buildDynamicColumnFilterBar();
+  filterData();
+}
+
+function triggerQuickAction() {
+  if (activeSheet === 'FORM BARANG MASUK') {
+    openModal('form-masuk');
+  } else {
+    document.getElementById('in-target-sr').value = activeSheet.startsWith('SR') ? activeSheet : 'SR1';
+    openInputModal();
+  }
+}
+
+// ═══ GOOGLE SHEETS FETCH (GVIZ CSV) ═══
+function parseSpreadsheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : SPREADSHEET_ID;
+}
+
+function splitCSVLine(line) {
+  const res = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      res.push(cur.trim());
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  res.push(cur.trim());
+  return res;
+}
+
+async function quickSyncSheets(isInitial = false) {
+  const cfg = loadConfig();
+  const sId = parseSpreadsheetId(cfg.sheetUrl);
+  const syncIcon = document.getElementById('syncIcon');
+  const statusEl = document.getElementById('syncStatusText');
+
+  if (syncIcon) syncIcon.classList.add('animate-spin-fast');
+  if (statusEl) statusEl.textContent = 'Menyinkronkan data...';
+
+  try {
+    await fetchInventorySheet(sId);
+    await fetchFormMasukSheet(sId);
+    await fetchSummarySrSheet(sId);
+
+    if (activeSheet.startsWith('SR')) {
+      await fetchSheetCsv(activeSheet, false);
+    }
+
+    saveLocalData();
+    renderDateSuggestions();
+    buildDynamicColumnFilterBar();
+    filterData();
+
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (statusEl) statusEl.textContent = `Tersinkron • ${now}`;
+    if (!isInitial) showToast('Data berhasil diperbarui dari Google Sheets', 'success');
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Mode Offline (Lokal)';
+    if (!isInitial) showToast(err.message || 'Gagal sinkron spreadsheet', 'error');
+  } finally {
+    if (syncIcon) syncIcon.classList.remove('animate-spin-fast');
+  }
+}
+
+async function fetchInventorySheet(sId) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sId}/gviz/tq?tqx=out:csv&sheet=INVENTORY`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const csv = await res.text();
+    if (csv.includes('<!DOCTYPE')) return;
+
+    const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return;
+
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i]);
+      if (cols.length < 3) continue;
+      const kode = cols[0];
+      if (!kode) continue;
+
+      items.push({
+        kodeBarang: kode,
+        tglMasuk: cols[1] || '',
+        namaBarang: cols[2] || '',
+        satuan: cols[3] || 'PCS',
+        price: parseIndoNumber(cols[4]),
+        inQty: parseIndoNumber(cols[5]),
+        outQty: parseIndoNumber(cols[6]),
+        divisi: cols[7] || 'KITCHEN',
+        stock: parseIndoNumber(cols[8])
+      });
+    }
+    if (items.length > 0) inventoryData = items;
+  } catch (e) {}
+}
+
+async function fetchFormMasukSheet(sId) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sId}/gviz/tq?tqx=out:csv&gid=453156449`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const csv = await res.text();
+    if (csv.includes('<!DOCTYPE')) return;
+
+    const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return;
+
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i]);
+      if (cols.length < 3) continue;
+      const kode = cols[0];
+      if (!kode) continue;
+
+      items.push({
+        kodeBarang: kode,
+        tglMasuk: cols[1] || '',
+        namaBarang: cols[2] || '',
+        satuan: cols[3] || 'PCS',
+        inQty: parseIndoNumber(cols[4]),
+        divisi: cols[5] || 'KITCHEN'
+      });
+    }
+    if (items.length > 0) formMasukData = items;
+  } catch (e) {}
+}
+
+async function fetchSummarySrSheet(sId) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('SUMMARY SR')}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const csv = await res.text();
+    if (csv.includes('<!DOCTYPE')) return;
+
+    const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return;
+
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i]);
+      if (cols.length < 2) continue;
+      const kode = cols[0];
+      if (!kode) continue;
+
+      const parsed = parseKodeBarangInfo(kode);
+      const inv = inventoryData.find(m => m.kodeBarang === kode);
+
+      items.push({
+        kodeBarang: kode,
+        out: parseIndoNumber(cols[1]),
+        tglSr: cols[2] || 'SR',
+        namaBarang: inv ? inv.namaBarang : parsed.nama,
+        divisi: inv ? inv.divisi : parsed.divisi,
+        satuan: inv ? inv.satuan : parsed.satuan,
+        tglMasuk: inv ? inv.tglMasuk : '-'
+      });
+    }
+    if (items.length > 0) summarySrData = items;
+  } catch (e) {}
+}
+
+async function fetchSheetCsv(sheetName, triggerRender = true) {
+  const cfg = loadConfig();
+  const sId = parseSpreadsheetId(cfg.sheetUrl);
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const csv = await res.text();
+    if (csv.includes('<!DOCTYPE')) return;
+
+    const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+      srSheetsData[sheetName] = [];
+      return;
+    }
+
+    const records = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i]);
+      if (cols.length < 2) continue;
+      const kode = cols[1];
+      if (!kode) continue;
+
+      const tglMasuk = cols[0];
+      const sisaStock = parseIndoNumber(cols[2]);
+      const out = parseIndoNumber(cols[3]);
+      const tglSr = cols[4] || sheetName;
+
+      const inv = inventoryData.find(m => m.kodeBarang === kode);
+      const parsed = parseKodeBarangInfo(kode);
+
+      records.push({
+        id: `${sheetName}_${i}_${Date.now()}`,
+        tglMasuk: tglMasuk || (inv ? inv.tglMasuk : '-'),
+        kodeBarang: kode,
+        namaBarang: inv ? inv.namaBarang : parsed.nama,
+        divisi: inv ? inv.divisi : parsed.divisi,
+        satuan: inv ? inv.satuan : parsed.satuan,
+        sisaStock: sisaStock,
+        out: out,
+        tglSr: tglSr
+      });
+    }
+
+    srSheetsData[sheetName] = records;
+    saveLocalData();
+    if (triggerRender && activeSheet === sheetName) {
+      buildDynamicColumnFilterBar();
+      filterData();
+    }
+  } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATA VALIDATION FILTER SYSTEM (FILTER SEMUA KOLOM)
+// ═══════════════════════════════════════════════════════════════
+function getActiveDataSource() {
+  if (activeSheet === 'INVENTORY') return inventoryData;
+  if (activeSheet === 'FORM BARANG MASUK') return formMasukData;
+  if (activeSheet === 'SUMMARY SR') return summarySrData;
+  return srSheetsData[activeSheet] || [];
+}
+
+function getColumnUniqueValues(colKey) {
+  const data = getActiveDataSource();
+  const counts = {};
+  data.forEach(item => {
+    let val = item[colKey];
+    if (val === undefined || val === null || String(val).trim() === '') return;
+    val = String(val).trim();
+    counts[val] = (counts[val] || 0) + 1;
+  });
+  return counts;
+}
+
+function buildDynamicColumnFilterBar() {
+  const container = document.getElementById('dynamicColumnFilters');
+  if (!container) return;
+
+  const filtersToRender = [];
+
+  // 1. Divisi
+  filtersToRender.push({
+    key: 'divisi',
+    label: 'Divisi',
+    counts: getColumnUniqueValues('divisi')
+  });
+
+  // 2. Satuan
+  filtersToRender.push({
+    key: 'satuan',
+    label: 'Satuan',
+    counts: getColumnUniqueValues('satuan')
+  });
+
+  // 3. Batch Masuk
+  filtersToRender.push({
+    key: 'tglMasuk',
+    label: 'Batch Masuk',
+    counts: getColumnUniqueValues('tglMasuk')
+  });
+
+  // 4. Nama Barang
+  filtersToRender.push({
+    key: 'namaBarang',
+    label: 'Nama Barang',
+    counts: getColumnUniqueValues('namaBarang')
+  });
+
+  // 5. Khusus SUMMARY SR: Sheet Asal
+  if (activeSheet === 'SUMMARY SR') {
+    filtersToRender.push({
+      key: 'tglSr',
+      label: 'Sheet SR',
+      counts: getColumnUniqueValues('tglSr')
+    });
+  }
+
+  // 6. Status Stok
+  const stokOptions = activeSheet === 'INVENTORY' ? [
+    { val: 'ada', label: 'Ada Stok (> 0)' },
+    { val: 'kosong', label: 'Habis (0)' }
+  ] : [
+    { val: 'ada', label: 'Ada OUT (> 0)' },
+    { val: 'kosong', label: 'OUT Nol (0)' }
+  ];
+
+  let html = filtersToRender.map(f => {
+    const curVal = columnFilters[f.key] || '';
+    const sortedKeys = Object.keys(f.counts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    const optionsHtml = sortedKeys.map(k => `
+      <option value="${escapeHtml(k)}" ${k === curVal ? 'selected' : ''}>
+        ${escapeHtml(k)} (${f.counts[k]})
+      </option>
+    `).join('');
+
+    const hasActive = Boolean(curVal);
+
+    return `
+      <div class="relative">
+        <label class="block text-[10px] font-bold uppercase mb-0.5 ${hasActive ? 'text-[var(--link)]' : 'text-[var(--muted-foreground)]'}">
+          ${f.label} ${hasActive ? '✓' : ''}
+        </label>
+        <select onchange="setColumnFilter('${f.key}', this.value)"
+          class="w-full py-1.5 pl-2.5 text-xs font-semibold rounded-xl border ${hasActive ? 'border-[var(--link)] bg-[color-mix(in_srgb,var(--link)_8%,transparent)] text-[var(--link)]' : 'border-[var(--border)] bg-[var(--content)] text-[var(--foreground)]'} validation-select cursor-pointer appearance-none transition-all">
+          <option value="">Semua ${f.label}</option>
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
+  }).join('');
+
+  const curStokVal = columnFilters.stokStatus || '';
+  html += `
+    <div class="relative">
+      <label class="block text-[10px] font-bold uppercase mb-0.5 ${curStokVal ? 'text-[var(--link)]' : 'text-[var(--muted-foreground)]'}">
+        Status ${curStokVal ? '✓' : ''}
+      </label>
+      <select onchange="setColumnFilter('stokStatus', this.value)"
+        class="w-full py-1.5 pl-2.5 text-xs font-semibold rounded-xl border ${curStokVal ? 'border-[var(--link)] bg-[color-mix(in_srgb,var(--link)_8%,transparent)] text-[var(--link)]' : 'border-[var(--border)] bg-[var(--content)] text-[var(--foreground)]'} validation-select cursor-pointer appearance-none transition-all">
+        <option value="">Semua Status</option>
+        ${stokOptions.map(o => `<option value="${o.val}" ${o.val === curStokVal ? 'selected' : ''}>${o.label}</option>`).join('')}
+      </select>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function setColumnFilter(key, value) {
+  columnFilters[key] = value;
+  buildDynamicColumnFilterBar();
+  filterData();
+}
+
+function resetAllColumnFilters() {
+  columnFilters = {
+    divisi: '',
+    namaBarang: '',
+    kodeBarang: '',
+    satuan: '',
+    tglMasuk: '',
+    tglSr: '',
+    stokStatus: ''
+  };
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').classList.add('hidden');
+  buildDynamicColumnFilterBar();
+  filterData();
+  showToast('Semua filter kolom telah di-reset', 'info');
+}
+
+function updateActiveFilterBadge() {
+  const activeCount = Object.values(columnFilters).filter(v => Boolean(v)).length;
+  const badge = document.getElementById('activeFilterBadge');
+  const dot = document.getElementById('filterActiveBadgeDot');
+  const resetBtn = document.getElementById('resetFilterBtn');
+
+  if (activeCount > 0) {
+    badge.textContent = `${activeCount} filter aktif`;
+    badge.classList.remove('hidden');
+    dot.classList.remove('hidden');
+    resetBtn.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+    dot.classList.add('hidden');
+    resetBtn.classList.add('hidden');
+  }
+}
+
+function filterData() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  document.getElementById('clearBtn').classList.toggle('hidden', !q);
+
+  const source = getActiveDataSource();
+
+  currentDisplayItems = source.filter(item => {
+    const matchQ = !q ||
+      (item.kodeBarang && item.kodeBarang.toLowerCase().includes(q)) ||
+      (item.namaBarang && item.namaBarang.toLowerCase().includes(q)) ||
+      (item.divisi && item.divisi.toLowerCase().includes(q)) ||
+      (item.satuan && item.satuan.toLowerCase().includes(q)) ||
+      (item.tglMasuk && item.tglMasuk.toLowerCase().includes(q)) ||
+      (item.tglSr && item.tglSr.toLowerCase().includes(q));
+
+    const matchDiv = !columnFilters.divisi || item.divisi === columnFilters.divisi;
+    const matchSat = !columnFilters.satuan || item.satuan === columnFilters.satuan;
+    const matchNama = !columnFilters.namaBarang || item.namaBarang === columnFilters.namaBarang;
+    const matchKode = !columnFilters.kodeBarang || item.kodeBarang === columnFilters.kodeBarang;
+    const matchTgl = !columnFilters.tglMasuk || item.tglMasuk === columnFilters.tglMasuk;
+    const matchSr = !columnFilters.tglSr || item.tglSr === columnFilters.tglSr;
+
+    let matchStok = true;
+    if (columnFilters.stokStatus === 'ada') {
+      if (activeSheet === 'INVENTORY') matchStok = (item.stock > 0);
+      else if (activeSheet === 'FORM BARANG MASUK') matchStok = (item.inQty > 0);
+      else matchStok = (item.out > 0);
+    } else if (columnFilters.stokStatus === 'kosong') {
+      if (activeSheet === 'INVENTORY') matchStok = (item.stock <= 0);
+      else if (activeSheet === 'FORM BARANG MASUK') matchStok = (item.inQty <= 0);
+      else matchStok = (item.out <= 0);
+    }
+
+    return matchQ && matchDiv && matchSat && matchNama && matchKode && matchTgl && matchSr && matchStok;
+  });
+
+  renderView(q);
+  updateStats();
+  updateActiveFilterBadge();
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  filterData();
+  document.getElementById('searchInput').focus();
+}
+
+// ═══ RENDER VIEW (TABLE OR CARD RESPONSIVE) ═══
+function renderView(q) {
+  const container = document.getElementById('productList');
+  const empty = document.getElementById('emptyState');
+
+  if (!currentDisplayItems.length) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    empty.classList.remove('hidden');
+    empty.style.display = 'flex';
+    return;
+  }
+
+  empty.classList.add('hidden');
+  empty.style.display = 'none';
+  container.classList.remove('hidden');
+
+  if (currentViewMode === 'table') {
+    renderTableView(container, q);
+  } else {
+    renderCardGridView(container, q);
+  }
+}
+
+// 1. DESKTOP OPTIMIZED TABLE VIEW
+function renderTableView(container, q) {
+  let theadHtml = '';
+  let tbodyHtml = '';
+
+  if (activeSheet === 'INVENTORY') {
+    theadHtml = `
+      <tr>
+        <th class="w-10 text-center">No</th>
+        <th>Divisi</th>
+        <th>Nama Barang</th>
+        <th>Kode Barang</th>
+        <th class="text-center">Satuan</th>
+        <th class="text-center">Batch Masuk</th>
+        <th class="text-right">IN</th>
+        <th class="text-right">OUT</th>
+        <th class="text-right">Sisa Stok</th>
+        <th class="text-center">Status</th>
+        <th class="text-center w-28">Aksi</th>
+      </tr>
+    `;
+    tbodyHtml = currentDisplayItems.map((item, idx) => {
+      const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+      const hasStock = item.stock > 0;
+      return `
+        <tr class="border-b border-[var(--card-border)] hover:bg-[color-mix(in_srgb,var(--content)_40%,transparent)] transition-colors">
+          <td class="text-center font-mono text-[11px] text-[var(--muted-foreground)]">${idx + 1}</td>
+          <td><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span></td>
+          <td class="font-bold text-[13px]">${highlightText(item.namaBarang, q)}</td>
+          <td class="font-mono text-xs text-[var(--muted-foreground)]">${highlightText(item.kodeBarang, q)}</td>
+          <td class="text-center text-xs font-semibold">${escapeHtml(item.satuan || 'PCS')}</td>
+          <td class="text-center text-xs text-[var(--muted-foreground)]">${escapeHtml(item.tglMasuk || '-')}</td>
+          <td class="text-right font-mono font-bold text-xs">${formatIndoQty(item.inQty)}</td>
+          <td class="text-right font-mono font-bold text-xs text-[var(--link)]">${formatIndoQty(item.outQty)}</td>
+          <td class="text-right font-mono font-black text-sm ${hasStock ? 'text-[var(--success)]' : 'text-[var(--error)]'}">${formatIndoQty(item.stock)}</td>
+          <td class="text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${hasStock ? 'bg-green-500/10 text-[var(--success)]' : 'bg-red-500/10 text-[var(--error)]'}">
+              ${hasStock ? '✓ Ada Stok' : '✕ Habis'}
+            </span>
+          </td>
+          <td class="text-center">
+            <button onclick="prefillInputSr('${escapeHtml(item.kodeBarang)}')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 active:scale-95 transition-all cursor-pointer">
+              + Out SR
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } else if (activeSheet === 'FORM BARANG MASUK') {
+    theadHtml = `
+      <tr>
+        <th class="w-10 text-center">No</th>
+        <th>Kode Barang (Kolom A - Rumus ;)</th>
+        <th>Tgl Masuk (B)</th>
+        <th>Nama Barang (C)</th>
+        <th class="text-center">Satuan (D)</th>
+        <th class="text-right">IN (E)</th>
+        <th>Divisi (F)</th>
+        <th class="text-center w-24">Aksi</th>
+      </tr>
+    `;
+    tbodyHtml = currentDisplayItems.map((item, idx) => {
+      const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+      return `
+        <tr class="border-b border-[var(--card-border)] hover:bg-[color-mix(in_srgb,var(--content)_40%,transparent)] transition-colors">
+          <td class="text-center font-mono text-[11px] text-[var(--muted-foreground)]">${idx + 1}</td>
+          <td class="font-mono text-xs font-bold text-[var(--link)]">${highlightText(item.kodeBarang, q)}</td>
+          <td class="text-xs font-semibold text-[var(--foreground)]">${escapeHtml(item.tglMasuk || '-')}</td>
+          <td class="font-bold text-[13px]">${highlightText(item.namaBarang, q)}</td>
+          <td class="text-center text-xs font-semibold">${escapeHtml(item.satuan || 'PCS')}</td>
+          <td class="text-right font-mono font-black text-sm text-[var(--success)]">${formatIndoQty(item.inQty)}</td>
+          <td><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span></td>
+          <td class="text-center">
+            <button onclick="prefillInputSr('${escapeHtml(item.kodeBarang)}')" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">
+              + Catat SR
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } else if (activeSheet === 'SUMMARY SR') {
+    theadHtml = `
+      <tr>
+        <th class="w-10 text-center">No</th>
+        <th>Divisi</th>
+        <th>Kode Barang</th>
+        <th>Nama Barang</th>
+        <th class="text-center">Satuan</th>
+        <th class="text-center">Batch Masuk</th>
+        <th class="text-center">Sheet Asal (Tgl SR)</th>
+        <th class="text-right">Total OUT</th>
+      </tr>
+    `;
+    tbodyHtml = currentDisplayItems.map((item, idx) => {
+      const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+      return `
+        <tr class="border-b border-[var(--card-border)] hover:bg-[color-mix(in_srgb,var(--content)_40%,transparent)] transition-colors">
+          <td class="text-center font-mono text-[11px] text-[var(--muted-foreground)]">${idx + 1}</td>
+          <td><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span></td>
+          <td class="font-mono text-xs text-[var(--muted-foreground)]">${highlightText(item.kodeBarang, q)}</td>
+          <td class="font-bold text-[13px]">${highlightText(item.namaBarang, q)}</td>
+          <td class="text-center text-xs font-semibold">${escapeHtml(item.satuan || 'PCS')}</td>
+          <td class="text-center text-xs text-[var(--muted-foreground)]">${escapeHtml(item.tglMasuk || '-')}</td>
+          <td class="text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--link)] text-white">${escapeHtml(item.tglSr || 'SR')}</span></td>
+          <td class="text-right font-mono font-black text-sm text-[var(--link)]">${formatIndoQty(item.out)}</td>
+        </tr>
+      `;
+    }).join('');
+  } else {
+    theadHtml = `
+      <tr>
+        <th class="w-10 text-center">No</th>
+        <th>Divisi</th>
+        <th>Kode Barang (B)</th>
+        <th>Nama Barang</th>
+        <th class="text-center">Satuan</th>
+        <th class="text-center">Batch Masuk (A)</th>
+        <th class="text-right">Sisa Stok (C)</th>
+        <th class="text-right">Pengeluaran - OUT (D)</th>
+        <th class="text-center">TGL SR (E)</th>
+        <th class="text-center w-28">Aksi</th>
+      </tr>
+    `;
+    tbodyHtml = currentDisplayItems.map((item, idx) => {
+      const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+      return `
+        <tr class="border-b border-[var(--card-border)] hover:bg-[color-mix(in_srgb,var(--content)_40%,transparent)] transition-colors">
+          <td class="text-center font-mono text-[11px] text-[var(--muted-foreground)]">${idx + 1}</td>
+          <td><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span></td>
+          <td class="font-mono text-xs font-bold text-[var(--link)]">${highlightText(item.kodeBarang, q)}</td>
+          <td class="font-bold text-[13px]">${highlightText(item.namaBarang, q)}</td>
+          <td class="text-center text-xs font-semibold">${escapeHtml(item.satuan || 'PCS')}</td>
+          <td class="text-center text-xs text-[var(--muted-foreground)]">${escapeHtml(item.tglMasuk || '-')}</td>
+          <td class="text-right font-mono font-bold text-xs text-[var(--muted-foreground)]">${formatIndoQty(item.sisaStock)}</td>
+          <td class="text-right font-mono font-black text-sm text-[var(--primary)]">${formatIndoQty(item.out)}</td>
+          <td class="text-center text-xs font-bold text-[var(--link)]">${escapeHtml(item.tglSr || activeSheet)}</td>
+          <td class="text-center">
+            <button onclick="showDetail(${idx})" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--border)] hover:bg-[var(--content)] cursor-pointer">Detail</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  container.innerHTML = `
+    <div class="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse table-dense">
+          <thead class="bg-[var(--content)] border-b border-[var(--border)] text-[var(--muted-foreground)] sticky top-0 z-10">
+            ${theadHtml}
+          </thead>
+          <tbody class="divide-y divide-[var(--card-border)]">
+            ${tbodyHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// 2. CARD GRID VIEW (OPTIMAL UNTUK HP DAN TABLET)
+function renderCardGridView(container, q) {
+  const cardsHtml = currentDisplayItems.map((item, idx) => {
+    const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+    const sel = selectedIndices.has(idx);
+
+    if (activeSheet === 'INVENTORY') {
+      const hasStock = item.stock > 0;
+      return `
+        <div class="fade-in rounded-2xl border ${sel ? 'border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]' : 'border-[var(--card-border)] bg-[var(--card)]'} p-3.5 sm:p-4 shadow-xs transition-all flex flex-col justify-between">
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-1.5 sm:mb-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--content)] text-[var(--muted-foreground)]">${escapeHtml(item.satuan || 'PCS')}</span>
+              </div>
+              <span class="text-xs font-black ${hasStock ? 'text-[var(--success)]' : 'text-[var(--error)]'}">
+                ${hasStock ? '✓ Stok: ' + formatIndoQty(item.stock) : '✕ Habis'}
+              </span>
+            </div>
+            <h3 class="text-xs sm:text-sm font-bold leading-snug line-clamp-2">${highlightText(item.namaBarang, q)}</h3>
+            <p class="text-[11px] sm:text-xs font-mono text-[var(--muted-foreground)] mt-0.5 sm:mt-1 truncate">${highlightText(item.kodeBarang, q)}</p>
+          </div>
+          <div class="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-[var(--card-border)] flex items-center justify-between text-xs">
+            <span class="text-[var(--muted-foreground)] text-[10px] sm:text-[11px]">IN: ${formatIndoQty(item.inQty)} • OUT: ${formatIndoQty(item.outQty)}</span>
+            <button onclick="prefillInputSr('${escapeHtml(item.kodeBarang)}')" class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] cursor-pointer hover:opacity-90 active:scale-95 transition-all">
+              + Out SR
+            </button>
+          </div>
+        </div>
+      `;
+    } else if (activeSheet === 'FORM BARANG MASUK') {
+      return `
+        <div class="fade-in rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3.5 sm:p-4 shadow-xs transition-all flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-[var(--success)]">📥 IN: ${formatIndoQty(item.inQty)} ${escapeHtml(item.satuan || 'PCS')}</span>
+            </div>
+            <h3 class="text-xs sm:text-sm font-bold leading-snug line-clamp-2">${highlightText(item.namaBarang, q)}</h3>
+            <p class="text-[11px] sm:text-xs font-mono text-[var(--link)] mt-1 break-all">${highlightText(item.kodeBarang, q)}</p>
+          </div>
+          <div class="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-[var(--card-border)] flex items-center justify-between text-xs text-[var(--muted-foreground)]">
+            <span class="text-[11px]">Tgl: <strong class="text-[var(--foreground)]">${escapeHtml(item.tglMasuk || '-')}</strong></span>
+            <button onclick="prefillInputSr('${escapeHtml(item.kodeBarang)}')" class="text-xs font-bold text-[var(--link)] hover:underline cursor-pointer">+ Catat SR</button>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="fade-in rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3.5 sm:p-4 shadow-xs cursor-pointer flex flex-col justify-between" onclick="${inSelectMode ? `toggleSelect(${idx})` : `showDetail(${idx})`}">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">${escapeHtml(item.divisi || 'UMUM')}</span>
+              <span class="px-2.5 py-1 rounded-xl text-xs font-black bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] text-[var(--primary)] border border-[var(--border)]">
+                📤 OUT: ${formatIndoQty(item.out)}
+              </span>
+            </div>
+            <h3 class="text-xs sm:text-sm font-bold leading-snug line-clamp-2">${highlightText(item.namaBarang, q)}</h3>
+            <p class="text-[11px] sm:text-xs font-mono text-[var(--muted-foreground)] mt-1 truncate">${highlightText(item.kodeBarang, q)}</p>
+          </div>
+          <div class="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-[var(--card-border)] flex items-center justify-between text-xs text-[var(--muted-foreground)]">
+            <span class="text-[11px]">Batch: <strong class="text-[var(--foreground)]">${escapeHtml(item.tglMasuk || '-')}</strong></span>
+            <span class="text-[11px]">Sisa: <strong class="text-[var(--foreground)]">${formatIndoQty(item.sisaStock)}</strong></span>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3.5">
+      ${cardsHtml}
+    </div>
+  `;
+}
+
+function updateStats() {
+  document.getElementById('resultCount').textContent = currentDisplayItems.length.toLocaleString('id-ID');
+
+  let totalQty = 0;
+  if (activeSheet === 'INVENTORY') {
+    totalQty = currentDisplayItems.reduce((acc, it) => acc + (it.stock || 0), 0);
+  } else if (activeSheet === 'FORM BARANG MASUK') {
+    totalQty = currentDisplayItems.reduce((acc, it) => acc + (it.inQty || 0), 0);
+  } else {
+    totalQty = currentDisplayItems.reduce((acc, it) => acc + (it.out || 0), 0);
+  }
+
+  document.getElementById('totalQtyVal').textContent = formatIndoQty(totalQty);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORM BARANG MASUK: INPUT BARANG MASUK BARU
+// ═══════════════════════════════════════════════════════════════
+function updateFbmCodePreview() {
+  const divisi = document.getElementById('fbm-divisi').value || 'KITCHEN';
+  const nama = document.getElementById('fbm-nama').value.trim();
+  const customSatuan = document.getElementById('fbm-custom-satuan').value.trim();
+  const satuan = customSatuan || document.getElementById('fbm-satuan').value || 'PCS';
+
+  const nextNum = (formMasukData.length + 1).toString().padStart(4, '0');
+  document.getElementById('fbmNextNumLabel').textContent = `Nomor Urut: #${nextNum}`;
+
+  const generatedCode = nama ? `(${divisi})${nama}(${satuan})${nextNum}` : `(${divisi})[Nama Barang](${satuan})${nextNum}`;
+  document.getElementById('fbmGeneratedCode').textContent = generatedCode;
+}
+
+function onFbmNamaInput(val) {
+  const q = val.trim().toLowerCase();
+  const sug = document.getElementById('fbmNamaSuggestions');
+  if (!q) { sug.classList.add('hidden'); return; }
+
+  const matches = MASTER_NAMA_BARANG.filter(n => n.toLowerCase().includes(q)).slice(0, 8);
+  if (!matches.length) { sug.classList.add('hidden'); return; }
+
+  sug.innerHTML = matches.map(m => `
+    <div class="p-2.5 hover:bg-[var(--content)] cursor-pointer text-xs font-semibold" onclick="selectFbmNama('${escapeHtml(m)}')">
+      ${escapeHtml(m)}
+    </div>
+  `).join('');
+  sug.classList.remove('hidden');
+}
+
+function selectFbmNama(nama) {
+  document.getElementById('fbm-nama').value = nama;
+  document.getElementById('fbmNamaSuggestions').classList.add('hidden');
+  updateFbmCodePreview();
+}
+
+function adjustFbmInQty(delta) {
+  const el = document.getElementById('fbm-qty');
+  const cur = parseFloat(el.value) || 0;
+  el.value = Math.max(0.1, cur + delta);
+}
+
+async function submitFormBarangMasuk() {
+  const tglMasuk = document.getElementById('fbm-tgl').value.trim() || getTodayDateStr();
+  const namaBarang = document.getElementById('fbm-nama').value.trim();
+  const customSatuan = document.getElementById('fbm-custom-satuan').value.trim();
+  const satuan = customSatuan || document.getElementById('fbm-satuan').value || 'PCS';
+  const inQty = parseFloat(document.getElementById('fbm-qty').value) || 0;
+  const divisi = document.getElementById('fbm-divisi').value || 'KITCHEN';
+
+  if (!namaBarang) { showToast('Masukkan Nama Barang!', 'error'); return; }
+  if (inQty <= 0) { showToast('Jumlah barang masuk harus > 0', 'error'); return; }
+
+  const nextNum = (formMasukData.length + 1).toString().padStart(4, '0');
+  const kodeBarang = `(${divisi})${namaBarang}(${satuan})${nextNum}`;
+
+  const newEntry = {
+    kodeBarang: kodeBarang,
+    tglMasuk: tglMasuk,
+    namaBarang: namaBarang,
+    satuan: satuan,
+    inQty: inQty,
+    divisi: divisi
+  };
+
+  formMasukData.unshift(newEntry);
+
+  const existingInv = inventoryData.find(m => m.kodeBarang === kodeBarang);
+  if (existingInv) {
+    existingInv.inQty += inQty;
+    existingInv.stock += inQty;
+  } else {
+    inventoryData.unshift({
+      kodeBarang: kodeBarang,
+      tglMasuk: tglMasuk,
+      namaBarang: namaBarang,
+      satuan: satuan,
+      price: 0,
+      inQty: inQty,
+      outQty: 0,
+      divisi: divisi,
+      stock: inQty
+    });
+  }
+
+  saveLocalData();
+  renderDateSuggestions();
+  buildDynamicColumnFilterBar();
+
+  const cfg = loadConfig();
+  if (cfg.webAppUrl && cfg.webAppUrl.startsWith('http')) {
+    sendToAppsScript(cfg.webAppUrl, {
+      action: 'input_fbm',
+      tglMasuk: tglMasuk,
+      namaBarang: namaBarang,
+      satuan: satuan,
+      inQty: inQty,
+      divisi: divisi,
+      kodeBarang: kodeBarang
+    });
+  }
+
+  closeModal('form-masuk');
+  showToast(`Barang masuk dicatat! Kode: ${kodeBarang}`, 'success');
+
+  document.getElementById('fbm-nama').value = '';
+  document.getElementById('fbm-qty').value = '1';
+  document.getElementById('fbm-custom-satuan').value = '';
+
+  if (activeSheet === 'FORM BARANG MASUK' || activeSheet === 'INVENTORY') {
+    filterData();
+  } else {
+    switchSheet('FORM BARANG MASUK');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT SR (BARANG KELUAR)
+// ═══════════════════════════════════════════════════════════════
+function openInputModal() {
+  const targetSr = activeSheet.startsWith('SR') ? activeSheet : 'SR1';
+  document.getElementById('in-target-sr').value = targetSr;
+  document.getElementById('prevTglSrFormula').textContent = targetSr;
+  clearInputFields();
+  openModal('input-sr');
+  setTimeout(() => document.getElementById('in-search-item').focus(), 300);
+}
+
+function onTargetSrChanged(val) {
+  document.getElementById('prevTglSrFormula').textContent = val;
+}
+
+function prefillInputSr(kodeBarang) {
+  openInputModal();
+  selectItemForInput(kodeBarang);
+}
+
+function clearInputFields() {
+  document.getElementById('in-search-item').value = '';
+  document.getElementById('itemSuggestions').classList.add('hidden');
+  document.getElementById('selectedItemPreview').classList.add('hidden');
+  document.getElementById('in-kode-barang').value = '';
+  document.getElementById('in-nama-barang').value = '';
+  document.getElementById('in-divisi').value = '';
+  document.getElementById('in-satuan').value = '';
+  document.getElementById('in-tgl-masuk').value = '';
+  document.getElementById('in-sisa-stock').value = '0';
+  document.getElementById('in-qty-out').value = '1';
+  document.getElementById('remainingCalc').textContent = '';
+}
+
+function onItemSearchInput(val) {
+  const q = val.trim().toLowerCase();
+  const sug = document.getElementById('itemSuggestions');
+  if (!q) { sug.classList.add('hidden'); return; }
+
+  const matches = inventoryData.filter(it =>
+    it.kodeBarang.toLowerCase().includes(q) ||
+    it.namaBarang.toLowerCase().includes(q) ||
+    it.divisi.toLowerCase().includes(q)
+  ).slice(0, 10);
+
+  if (!matches.length) {
+    sug.innerHTML = `<div class="p-3 text-xs text-center text-[var(--muted-foreground)]">Barang tidak ditemukan di INVENTORY</div>`;
+    sug.classList.remove('hidden');
+    return;
+  }
+
+  sug.innerHTML = matches.map(m => `
+    <div class="p-2.5 hover:bg-[var(--content)] cursor-pointer active:bg-[var(--border)] transition-colors" onclick="selectItemForInput('${escapeHtml(m.kodeBarang)}')">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-bold leading-tight truncate">${escapeHtml(m.namaBarang)}</p>
+        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-[var(--content)] text-[var(--muted-foreground)]">${escapeHtml(m.divisi)}</span>
+      </div>
+      <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] mt-0.5">
+        <span class="font-mono">${escapeHtml(m.kodeBarang)}</span>
+        <span>Stok: <strong class="text-[var(--success)]">${formatIndoQty(m.stock)} ${escapeHtml(m.satuan)}</strong></span>
+      </div>
+    </div>
+  `).join('');
+
+  sug.classList.remove('hidden');
+}
+
+function selectItemForInput(kodeBarang) {
+  const inv = inventoryData.find(m => m.kodeBarang === kodeBarang);
+  const parsed = parseKodeBarangInfo(kodeBarang);
+
+  const nama = inv ? inv.namaBarang : parsed.nama;
+  const divisi = inv ? inv.divisi : parsed.divisi;
+  const satuan = inv ? inv.satuan : parsed.satuan;
+  const tglMasuk = inv ? inv.tglMasuk : '-';
+  const stock = inv ? inv.stock : 0;
+
+  document.getElementById('in-search-item').value = nama;
+  document.getElementById('itemSuggestions').classList.add('hidden');
+
+  document.getElementById('in-kode-barang').value = kodeBarang;
+  document.getElementById('in-nama-barang').value = nama;
+  document.getElementById('in-divisi').value = divisi;
+  document.getElementById('in-satuan').value = satuan;
+  document.getElementById('in-tgl-masuk').value = tglMasuk;
+  document.getElementById('in-sisa-stock').value = stock;
+
+  document.getElementById('prevNama').textContent = nama;
+  document.getElementById('prevKode').textContent = kodeBarang;
+  document.getElementById('prevTglMasuk').textContent = tglMasuk;
+  document.getElementById('prevStock').textContent = `${formatIndoQty(stock)} ${satuan}`;
+
+  const col = divisiColors[divisi] || { bg: '#f1f5f9', text: '#475569' };
+  const dEl = document.getElementById('prevDivisi');
+  dEl.textContent = divisi;
+  dEl.style.background = col.bg;
+  dEl.style.color = col.text;
+
+  document.getElementById('selectedItemPreview').classList.remove('hidden');
+  calculateStockRemaining();
+}
+
+function setOutQty(n) {
+  document.getElementById('in-qty-out').value = n;
+  calculateStockRemaining();
+}
+
+function adjustOutQty(delta) {
+  const el = document.getElementById('in-qty-out');
+  const cur = parseFloat(el.value) || 0;
+  el.value = Math.max(0.1, cur + delta);
+  calculateStockRemaining();
+}
+
+function calculateStockRemaining() {
+  const stock = parseFloat(document.getElementById('in-sisa-stock').value) || 0;
+  const out = parseFloat(document.getElementById('in-qty-out').value) || 0;
+  const rem = stock - out;
+
+  const remEl = document.getElementById('remainingCalc');
+  if (out > stock) {
+    remEl.innerHTML = `<span class="text-[var(--error)] font-bold">⚠️ OUT melebihi stok (${formatIndoQty(rem)})</span>`;
+  } else {
+    remEl.innerHTML = `Sisa setelah OUT: <strong>${formatIndoQty(rem)}</strong>`;
+  }
+}
+
+async function submitSrInput() {
+  const targetSr = document.getElementById('in-target-sr').value;
+  const kodeBarang = document.getElementById('in-kode-barang').value.trim();
+  const namaBarang = document.getElementById('in-nama-barang').value.trim();
+  const divisi = document.getElementById('in-divisi').value.trim();
+  const satuan = document.getElementById('in-satuan').value.trim();
+  const tglMasuk = document.getElementById('in-tgl-masuk').value.trim();
+  const sisaStock = parseFloat(document.getElementById('in-sisa-stock').value) || 0;
+  const out = parseFloat(document.getElementById('in-qty-out').value) || 0;
+
+  if (!kodeBarang) { showToast('Pilih barang terlebih dahulu!', 'error'); return; }
+  if (out <= 0) { showToast('Jumlah OUT harus lebih dari 0', 'error'); return; }
+
+  const newRecord = {
+    id: `${targetSr}_${Date.now()}`,
+    tglMasuk: tglMasuk,
+    kodeBarang: kodeBarang,
+    namaBarang: namaBarang,
+    divisi: divisi,
+    satuan: satuan,
+    sisaStock: sisaStock,
+    out: out,
+    tglSr: targetSr
+  };
+
+  if (!srSheetsData[targetSr]) srSheetsData[targetSr] = [];
+  srSheetsData[targetSr].unshift(newRecord);
+
+  summarySrData.unshift({
+    kodeBarang: kodeBarang,
+    out: out,
+    tglSr: targetSr,
+    namaBarang: namaBarang,
+    divisi: divisi,
+    satuan: satuan,
+    tglMasuk: tglMasuk
+  });
+
+  const inv = inventoryData.find(m => m.kodeBarang === kodeBarang);
+  if (inv) {
+    inv.outQty += out;
+    inv.stock = Math.max(0, inv.stock - out);
+  }
+
+  saveLocalData();
+  buildDynamicColumnFilterBar();
+
+  const cfg = loadConfig();
+  if (cfg.webAppUrl && cfg.webAppUrl.startsWith('http')) {
+    sendToAppsScript(cfg.webAppUrl, {
+      action: 'input_sr',
+      sheetName: targetSr,
+      kodeBarang: kodeBarang,
+      out: out
+    });
+  }
+
+  closeModal('input-sr');
+  showToast(`Berhasil dicatat ke ${targetSr}!`, 'success');
+
+  if (activeSheet !== targetSr) {
+    switchSheet(targetSr);
+  } else {
+    filterData();
+  }
+}
+
+async function sendToAppsScript(url, payload) {
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    showToast('Tersimpan langsung ke Google Sheets!', 'success');
+  } catch (e) {
+    showToast('Gagal koneksi Apps Script (tersimpan lokal)', 'warning');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KEAMANAN PIN ADMIN
+// ═══════════════════════════════════════════════════════════════
+function toggleAdminLockBtn() {
+  if (isAdminMode) {
+    isAdminMode = false;
+    updateAdminLockUI();
+    showToast('Terkunci. Kembali ke Mode Stock Keeper', 'info');
+  } else {
+    requestAdminAccess(() => {
+      showToast('Mode Admin Aktif! Akses hapus diizinkan', 'success');
+    });
+  }
+}
+
+function updateAdminLockUI() {
+  const btn = document.getElementById('adminModeBtn');
+  const icon = document.getElementById('adminLockIcon');
+  const txt = document.getElementById('adminLockText');
+
+  if (isAdminMode) {
+    icon.textContent = '🔓';
+    txt.textContent = 'Admin';
+    btn.classList.add('border-green-500', 'bg-green-500/10', 'text-green-500');
+    btn.classList.remove('text-[var(--muted-foreground)]');
+  } else {
+    icon.textContent = '🔒';
+    txt.textContent = 'Keeper';
+    btn.classList.remove('border-green-500', 'bg-green-500/10', 'text-green-500');
+    btn.classList.add('text-[var(--muted-foreground)]');
+  }
+}
+
+function requestAdminAccess(onSuccess) {
+  if (isAdminMode) {
+    onSuccess();
+    return;
+  }
+  pendingAdminAction = onSuccess;
+  pinInputBuffer = '';
+  updatePinDots();
+  document.getElementById('pinStatusText').textContent = 'Masukkan 4 Digit PIN Admin';
+  document.getElementById('pinStatusText').classList.remove('text-[var(--error)]');
+  openModal('pin');
+}
+
+function pressPinKey(digit) {
+  if (pinInputBuffer.length >= 4) return;
+  pinInputBuffer += digit;
+  updatePinDots();
+
+  if (pinInputBuffer.length === 4) {
+    setTimeout(verifyEnteredPin, 100);
+  }
+}
+
+function backspacePinKey() {
+  if (pinInputBuffer.length > 0) {
+    pinInputBuffer = pinInputBuffer.slice(0, -1);
+    updatePinDots();
+  }
+}
+
+function clearPinInput() {
+  pinInputBuffer = '';
+  updatePinDots();
+}
+
+function updatePinDots() {
+  const dots = document.querySelectorAll('.pin-dot');
+  dots.forEach((d, i) => {
+    if (i < pinInputBuffer.length) {
+      d.classList.add('bg-[var(--primary)]', 'scale-110');
+      d.classList.remove('bg-[var(--card)]');
+    } else {
+      d.classList.remove('bg-[var(--primary)]', 'scale-110');
+      d.classList.add('bg-[var(--card)]');
+    }
+  });
+}
+
+function verifyEnteredPin() {
+  if (pinInputBuffer === adminPin) {
+    isAdminMode = true;
+    updateAdminLockUI();
+    closeModal('pin');
+    const act = pendingAdminAction;
+    pendingAdminAction = null;
+    if (act) act();
+  } else {
+    const container = document.getElementById('pinDotsContainer');
+    container.classList.add('animate-shake');
+    document.getElementById('pinStatusText').textContent = '❌ PIN Admin Salah!';
+    document.getElementById('pinStatusText').classList.add('text-[var(--error)]');
+    setTimeout(() => {
+      container.classList.remove('animate-shake');
+      clearPinInput();
+    }, 450);
+  }
+}
+
+function closePinModal() {
+  closeModal('pin');
+  pendingAdminAction = null;
+  clearPinInput();
+}
+
+function changeAdminPin() {
+  const newPin = document.getElementById('cfg-new-pin').value.trim();
+  if (!/^\d{4}$/.test(newPin)) {
+    showToast('PIN baru harus 4 digit angka!', 'error');
+    return;
+  }
+
+  requestAdminAccess(() => {
+    adminPin = newPin;
+    localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, newPin);
+    document.getElementById('cfg-new-pin').value = '';
+    showToast(`PIN Admin berhasil diubah ke ${newPin}`, 'success');
+  });
+}
+
+function deleteSingleRecordWithPin(displayIdx) {
+  const item = currentDisplayItems[displayIdx];
+  if (!item) return;
+
+  requestAdminAccess(() => {
+    if (!confirm(`Hapus catatan ${item.namaBarang} dari ${activeSheet}?`)) return;
+
+    if (activeSheet === 'FORM BARANG MASUK') {
+      const idx = formMasukData.indexOf(item);
+      if (idx >= 0) formMasukData.splice(idx, 1);
+    } else if (activeSheet.startsWith('SR')) {
+      const arr = srSheetsData[activeSheet];
+      if (arr) {
+        const idx = arr.indexOf(item);
+        if (idx >= 0) arr.splice(idx, 1);
+      }
+    }
+
+    saveLocalData();
+    buildDynamicColumnFilterBar();
+    filterData();
+    showToast('Catatan berhasil dihapus oleh Admin', 'success');
+  });
+}
+
+function bulkDeleteWithPin() {
+  if (selectedIndices.size === 0) return;
+
+  requestAdminAccess(() => {
+    if (!confirm(`Hapus ${selectedIndices.size} catatan terpilih dari ${activeSheet}?`)) return;
+
+    if (activeSheet === 'FORM BARANG MASUK') {
+      const itemsToDelete = [...selectedIndices].map(i => currentDisplayItems[i]);
+      itemsToDelete.forEach(it => {
+        const idx = formMasukData.indexOf(it);
+        if (idx >= 0) formMasukData.splice(idx, 1);
+      });
+    } else if (activeSheet.startsWith('SR')) {
+      const arr = srSheetsData[activeSheet] || [];
+      const itemsToDelete = [...selectedIndices].map(i => currentDisplayItems[i]);
+      itemsToDelete.forEach(it => {
+        const idx = arr.indexOf(it);
+        if (idx >= 0) arr.splice(idx, 1);
+      });
+    }
+
+    const count = selectedIndices.size;
+    exitSelectMode();
+    saveLocalData();
+    buildDynamicColumnFilterBar();
+    filterData();
+    showToast(`${count} catatan berhasil dihapus oleh Admin`, 'success');
+  });
+}
+
+// ═══ DETAIL VIEW ═══
+function showDetail(idx) {
+  const item = currentDisplayItems[idx];
+  if (!item) return;
+
+  const col = divisiColors[item.divisi] || { bg: '#f1f5f9', text: '#475569' };
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="space-y-4">
+      <div>
+        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" style="background:${col.bg};color:${col.text}">
+          ${escapeHtml(item.divisi || 'UMUM')}
+        </span>
+        <h3 class="text-base font-bold mt-1 leading-snug">${escapeHtml(item.namaBarang)}</h3>
+        <p class="text-xs font-mono text-[var(--link)] mt-0.5 break-all">${escapeHtml(item.kodeBarang)}</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="p-3 rounded-xl bg-[var(--content)]">
+          <p class="text-[10px] text-[var(--muted-foreground)]">Batch Masuk (Kolom A)</p>
+          <p class="text-sm font-bold mt-0.5">${escapeHtml(item.tglMasuk || '-')}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-[var(--content)]">
+          <p class="text-[10px] text-[var(--muted-foreground)]">Satuan</p>
+          <p class="text-sm font-bold mt-0.5">${escapeHtml(item.satuan || 'PCS')}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-[var(--content)]">
+          <p class="text-[10px] text-[var(--muted-foreground)]">Pengeluaran (Kolom D)</p>
+          <p class="text-sm font-black text-[var(--link)] mt-0.5">${formatIndoQty(item.out)}</p>
+        </div>
+        <div class="p-3 rounded-xl bg-[var(--content)]">
+          <p class="text-[10px] text-[var(--muted-foreground)]">Sisa Stok (Kolom C)</p>
+          <p class="text-sm font-black text-[var(--success)] mt-0.5">${formatIndoQty(item.sisaStock)}</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal('detail'); deleteSingleRecordWithPin(${idx});" class="flex-1 py-3 text-xs font-bold rounded-xl border border-[var(--error)] text-[var(--error)] hover:bg-[var(--error)] hover:text-white cursor-pointer active:scale-98 transition-all flex items-center justify-center gap-1.5">
+          <span>🔒 Hapus Catatan (Perlu PIN)</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  openModal('detail');
+}
+
+// ═══ SELECT MODE & BULK SELECTION ═══
+function selectMode() {
+  inSelectMode = true;
+  selectedIndices.clear();
+  document.getElementById('selectBar').classList.remove('hidden');
+  filterData();
+}
+
+function exitSelectMode() {
+  inSelectMode = false;
+  selectedIndices.clear();
+  document.getElementById('selectBar').classList.add('hidden');
+  filterData();
+}
+
+function toggleSelect(idx) {
+  if (selectedIndices.has(idx)) selectedIndices.delete(idx);
+  else selectedIndices.add(idx);
+  document.getElementById('selectedCount').textContent = selectedIndices.size;
+  document.getElementById('bulkDelBtn').disabled = selectedIndices.size === 0;
+  renderView(document.getElementById('searchInput').value.trim().toLowerCase());
+}
+
+function selectAllVisible() {
+  currentDisplayItems.forEach((_, i) => selectedIndices.add(i));
+  document.getElementById('selectedCount').textContent = selectedIndices.size;
+  document.getElementById('bulkDelBtn').disabled = false;
+  renderView(document.getElementById('searchInput').value.trim().toLowerCase());
+}
+
+// ═══ THEME & PENGATURAN ═══
+function updateThemeIcons() {
+  const isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('iconSun').classList.toggle('hidden', !isDark);
+  document.getElementById('iconMoon').classList.toggle('hidden', isDark);
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
+  updateThemeIcons();
+}
+
+function saveConnectionSettings() {
+  const sheetUrl = document.getElementById('cfg-sheet-url').value.trim() || DEFAULT_URL;
+  const webAppUrl = document.getElementById('cfg-webapp-url').value.trim();
+  saveConfig({ sheetUrl, webAppUrl });
+  showToast('Pengaturan koneksi berhasil disimpan', 'success');
+  closeModal('settings');
+}
+
+function copyAppsScriptCode() {
+  const snippet = document.getElementById('appsScriptSnippet').textContent;
+  navigator.clipboard.writeText(snippet).then(() => {
+    showToast('Kode Apps Script disalin!', 'success');
+  }).catch(() => showToast('Gagal menyalin', 'error'));
+}
+
+// ═══ TOAST & MODAL HELPERS ═══
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const colors = { success: 'bg-[var(--success)]', error: 'bg-[var(--error)]', warning: 'bg-[var(--warning)]', info: 'bg-[var(--primary)]' };
+  const icons = { success: '✓', error: '✕', warning: '⚠️', info: 'ℹ' };
+  const t = document.createElement('div');
+  t.className = `toast flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-xl text-xs sm:text-sm text-white font-semibold ${colors[type] || colors.info}`;
+  t.innerHTML = `<span>${icons[type] || 'ℹ'}</span> <span>${escapeHtml(msg)}</span>`;
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transition = 'opacity .3s ease-out';
+    setTimeout(() => t.remove(), 300);
+  }, 3200);
+}
+
+function openModal(id) {
+  document.getElementById(`modal-${id}`).classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (id === 'form-masuk') {
+    if (!document.getElementById('fbm-tgl').value) {
+      setFbmDate(getTodayDateStr());
+    }
+    renderDateSuggestions();
+    updateFbmCodePreview();
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(`modal-${id}`).classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+// ═══ DESKTOP KEYBOARD SHORTCUTS ═══
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+    document.getElementById('searchInput').select();
+  }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'm') {
+    e.preventDefault();
+    openModal('form-masuk');
+  }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    openInputModal();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    quickSyncSheets();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') {
+    e.preventDefault();
+    toggleViewMode();
+  }
+  const pinModal = document.getElementById('modal-pin');
+  if (pinModal && !pinModal.classList.contains('hidden')) {
+    if (/^[0-9]$/.test(e.key)) {
+      pressPinKey(e.key);
+    } else if (e.key === 'Backspace') {
+      backspacePinKey();
+    }
+  }
+  if (e.key === 'Escape') {
+    ['form-masuk', 'input-sr', 'pin', 'settings', 'detail'].forEach(id => {
+      const el = document.getElementById(`modal-${id}`);
+      if (el && !el.classList.contains('hidden')) closeModal(id);
+    });
+    if (inSelectMode) exitSelectMode();
+  }
+});
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
